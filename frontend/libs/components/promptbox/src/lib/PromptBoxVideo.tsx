@@ -31,6 +31,7 @@ import {
   RefImage,
   VideoInputMode,
   useCharactersStore,
+  StoredCharacter,
 } from "./promptStore";
 import { gtagEvent } from "@storyteller/google-analytics";
 import { ImagePromptRow } from "./ImagePromptRow";
@@ -57,6 +58,8 @@ declare global {
 }
 
 type GROK_ASPECT_RATIO = "landscape" | "portrait" | "square";
+
+const EMPTY_CHARACTERS: StoredCharacter[] = [];
 
 const DEFAULT_RESOLUTIONS: SizeOption[] = [
   {
@@ -335,7 +338,9 @@ export const PromptBoxVideo = ({
   const [localDuration, setLocalDuration] = useState(effectiveDuration);
   const durationTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   useEffect(() => {
+    clearTimeout(durationTimerRef.current);
     setLocalDuration(effectiveDuration);
+    return () => clearTimeout(durationTimerRef.current);
   }, [effectiveDuration]);
   const handleDurationSlide = (v: number) => {
     setLocalDuration(v);
@@ -419,10 +424,13 @@ export const PromptBoxVideo = ({
 
   // Characters are only supported for seedance_2p0
   const isSeedance2p0 = selectedModel?.id === "seedance_2p0";
-  const activeCharacters = isSeedance2p0 ? storedCharacters : [];
+  const activeCharacters = isSeedance2p0 ? storedCharacters : EMPTY_CHARACTERS;
 
   // Build a set of character names for highlight matching
-  const characterNames = activeCharacters.map((c) => c.name);
+  const characterNames = useMemo(
+    () => activeCharacters.map((c) => c.name),
+    [activeCharacters],
+  );
 
   const hasAnyMentionables = hasAnyRefs || activeCharacters.length > 0;
 
