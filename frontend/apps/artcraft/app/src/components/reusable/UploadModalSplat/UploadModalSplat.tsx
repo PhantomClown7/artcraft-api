@@ -22,7 +22,7 @@ interface Props {
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
-  initialFile?: File;
+  initialFiles?: File[];
   options?: {
     fileSubtypes?: { [key: string]: string }[];
     hasLength?: boolean;
@@ -34,7 +34,7 @@ const splatFileTypes = Object.values(SPLAT_FILE_TYPE);
 
 export function UploadModalSplat(props: Props) {
   const selectedCategory = FilterEngineCategories.SPLAT;
-  const { isOpen, onClose, onSuccess, title, titleIcon, initialFile, options } = props;
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles, options } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
 
@@ -73,7 +73,7 @@ export function UploadModalSplat(props: Props) {
               title={title}
               engineCategory={selectedCategory}
               fileTypes={splatFileTypes}
-              initialFile={initialFile}
+              initialFiles={initialFiles}
               options={{
                 ...(options ?? {}),
               }}
@@ -85,13 +85,19 @@ export function UploadModalSplat(props: Props) {
         );
       case UploaderStates.uploadingAsset:
       case UploaderStates.uploadingCover:
-      case UploaderStates.settingCover:
+      case UploaderStates.settingCover: {
+        const p = uploaderState.uploadProgress;
         return (
           <>
             <LoadingDots className="mb-1 bg-transparent" />
-            <div className="w-100 text-center opacity-50">Uploading...</div>
+            <div className="w-100 text-center opacity-50">
+              {p && p.total > 1
+                ? `Uploading ${p.current} / ${p.total}...`
+                : "Uploading..."}
+            </div>
           </>
         );
+      }
       case UploaderStates.success: {
         return (
           <UploadSuccess

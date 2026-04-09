@@ -21,13 +21,13 @@ interface Props {
   isOpen: boolean;
   title: string;
   titleIcon: IconDefinition;
-  initialFile?: File;
+  initialFiles?: File[];
 }
 
 const imageFileTypes = Object.values(IMAGEPLANE_FILE_TYPE);
 
 export function UploadModalImage(props: Props) {
-  const { isOpen, onClose, onSuccess, title, titleIcon, initialFile } = props;
+  const { isOpen, onClose, onSuccess, title, titleIcon, initialFiles } = props;
   const [uploaderState, setUploaderState] =
     useState<UploaderState>(initialUploaderState);
 
@@ -68,7 +68,7 @@ export function UploadModalImage(props: Props) {
             <UploadFilesImage
               title={title}
               fileTypes={imageFileTypes}
-              initialFile={initialFile}
+              initialFiles={initialFiles}
               onClose={onClose}
               onUploadProgress={updateUploaderState}
             />
@@ -76,13 +76,19 @@ export function UploadModalImage(props: Props) {
         );
       case UploaderStates.uploadingAsset:
       case UploaderStates.uploadingCover:
-      case UploaderStates.settingCover:
+      case UploaderStates.settingCover: {
+        const p = uploaderState.uploadProgress;
         return (
           <>
             <LoadingDots className="mb-1 bg-transparent" />
-            <div className="w-100 text-center opacity-50">Uploading...</div>
+            <div className="w-100 text-center opacity-50">
+              {p && p.total > 1
+                ? `Uploading ${p.current} / ${p.total}...`
+                : "Uploading..."}
+            </div>
           </>
         );
+      }
       case UploaderStates.success: {
         return (
           <UploadSuccess
