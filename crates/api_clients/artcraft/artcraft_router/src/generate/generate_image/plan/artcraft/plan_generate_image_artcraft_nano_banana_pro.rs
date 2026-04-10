@@ -50,9 +50,12 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // The omni-gen distillation hydrates media tokens to URLs before running
+    // cost estimation against the Artcraft provider. Cost only depends on
+    // num_images + resolution + is_edit_mode (derived before this resolver
+    // runs), so URL-form inputs are accepted and dropped — there's no Artcraft
+    // execution path for Nano Banana Pro that would need to read them back.
+    Some(ImageListRef::Urls(_)) => Ok(None),
   }
 }
 
@@ -354,6 +357,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_image_request()
@@ -387,6 +391,7 @@ mod tests {
   #[test]
   fn num_images_out_of_range_error_out() {
     let request = GenerateImageRequest {
+      quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_image_request()
@@ -405,6 +410,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
         ..base_image_request()
@@ -420,17 +426,19 @@ mod tests {
   // ── Image inputs ─────────────────────────────────────────────────────────
 
   #[test]
-  fn url_image_inputs_returns_error() {
+  fn url_image_inputs_are_accepted_for_cost_path() {
+    // The omni-gen distillation hydrates media tokens to URLs before running
+    // cost estimation against Artcraft. URLs are accepted (and dropped) since
+    // cost only depends on num_images + resolution + is_edit_mode.
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
       image_inputs: Some(ImageListRef::Urls(&urls)),
       ..base_image_request()
     };
-    let result = request.build();
-    assert!(matches!(
-      result,
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    ));
+    let ImageGenerationPlan::ArtcraftNanaBananaPro(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftNanaBananaPro")
+    };
+    assert!(plan.image_inputs.is_none());
   }
 
   #[test]

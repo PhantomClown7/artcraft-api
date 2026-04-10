@@ -46,9 +46,10 @@ fn resolve_image_list_ref<'a>(
   match image_list_ref {
     None => Ok(None),
     Some(ImageListRef::MediaFileTokens(tokens)) => Ok(Some(tokens)),
-    Some(ImageListRef::Urls(_)) => {
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    }
+    // Omni-gen distillation hydrates media tokens to URLs before running the
+    // Artcraft cost path. Cost only depends on num_images, so URL-form inputs
+    // are accepted and dropped.
+    Some(ImageListRef::Urls(_)) => Ok(None),
   }
 }
 
@@ -71,7 +72,7 @@ fn plan_image_size(
       if is_edit_mode { Ok(Some(S::Auto)) } else { Ok(Some(S::Square)) }
     }
 
-    Some(CommonAspectRatio::Auto2k) => Ok(Some(S::Auto2k)),
+    Some(CommonAspectRatio::Auto2k) | Some(CommonAspectRatio::Auto3k) => Ok(Some(S::Auto2k)),
     Some(CommonAspectRatio::Auto4k) => Ok(Some(S::Auto4k)),
 
     // Square
@@ -295,6 +296,7 @@ mod tests {
       RequestMismatchMitigationStrategy::PayLessDowngrade,
     ] {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(0),
         request_mismatch_mitigation_strategy: strategy,
         ..base_seedream_4_image_request()
@@ -322,6 +324,7 @@ mod tests {
   #[test]
   fn num_images_out_of_range_error_out() {
     let request = GenerateImageRequest {
+      quality: None,
       image_batch_count: Some(5),
       request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
       ..base_seedream_4_image_request()
@@ -336,6 +339,7 @@ mod tests {
   fn num_images_out_of_range_clamps_to_four() {
     for strategy in [RequestMismatchMitigationStrategy::PayMoreUpgrade, RequestMismatchMitigationStrategy::PayLessDowngrade] {
       let request = GenerateImageRequest {
+        quality: None,
         image_batch_count: Some(5),
         request_mismatch_mitigation_strategy: strategy,
         ..base_seedream_4_image_request()
@@ -348,16 +352,16 @@ mod tests {
   // ── Image inputs ──────────────────────────────────────────────────────────
 
   #[test]
-  fn url_image_inputs_returns_error() {
+  fn url_image_inputs_are_accepted_for_cost_path() {
     let urls = vec!["https://example.com/image.jpg".to_string()];
     let request = GenerateImageRequest {
       image_inputs: Some(ImageListRef::Urls(&urls)),
       ..base_seedream_4_image_request()
     };
-    assert!(matches!(
-      request.build(),
-      Err(ArtcraftRouterError::Client(ClientError::ArtcraftOnlySupportsMediaTokens))
-    ));
+    let ImageGenerationPlan::ArtcraftSeedream4(plan) = request.build().unwrap() else {
+      panic!("expected ArtcraftSeedream4")
+    };
+    assert!(plan.image_inputs.is_none());
   }
 
   #[test]

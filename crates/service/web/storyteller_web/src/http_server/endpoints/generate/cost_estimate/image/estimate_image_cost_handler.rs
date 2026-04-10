@@ -45,6 +45,7 @@ pub async fn estimate_image_cost_handler(
     image_inputs: None, // TODO: Only some models charge for this - we'll need to add later.
     resolution: router_resolution,
     aspect_ratio: router_aspect_ratio,
+    quality: None,
     image_batch_count: request.image_batch_count,
     request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayLessDowngrade,
     generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
@@ -129,6 +130,7 @@ fn map_image_model(model: CommonImageModel) -> Result<RouterImageModel, HandlerE
     CommonImageModel::Flux1Schnell => RouterImageModel::Flux1Schnell,
     CommonImageModel::FluxPro11 => RouterImageModel::FluxPro11,
     CommonImageModel::FluxPro11Ultra => RouterImageModel::FluxPro11Ultra,
+    CommonImageModel::GptImage1 => RouterImageModel::GptImage1,
     CommonImageModel::GptImage1p5 => RouterImageModel::GptImage1p5,
     CommonImageModel::NanoBanana => RouterImageModel::NanoBanana,
     CommonImageModel::NanoBanana2 => RouterImageModel::NanoBanana2,
@@ -157,6 +159,7 @@ fn map_aspect_ratio(ar: CommonAspectRatio) -> RouterAspectRatio {
     CommonAspectRatio::Wide => RouterAspectRatio::Wide,
     CommonAspectRatio::Tall => RouterAspectRatio::Tall,
     CommonAspectRatio::Auto2k => RouterAspectRatio::Auto2k,
+    CommonAspectRatio::Auto3k => RouterAspectRatio::Auto3k,
     CommonAspectRatio::Auto4k => RouterAspectRatio::Auto4k,
     CommonAspectRatio::SquareHd => RouterAspectRatio::SquareHd,
   }

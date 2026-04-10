@@ -4,6 +4,7 @@ use enums::common::generation::common_image_model::CommonImageModel;
 use enums::common::generation::common_resolution::CommonResolution;
 use enums::common::generation_provider::GenerationProvider;
 use once_cell::sync::Lazy;
+use enums::common::generation::common_quality::CommonQuality;
 
 pub const OMNI_GEN_IMAGE_MODELS_AND_PROVIDERS: Lazy<OmniGenImageModelsResponse> = Lazy::new(|| {
   let models = build_omni_gen_image_models();
@@ -189,6 +190,29 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
   });
 
   models.push(OmniGenImageModelDetails {
+    model: CommonImageModel::GptImage1,
+    full_name: Some("GPT Image 1".to_string()),
+    text_prompt_supported: Some(true),
+    image_refs_supported: Some(true),
+    aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Square,
+      CommonAspectRatio::WideThreeByTwo,
+      CommonAspectRatio::TallTwoByThree,
+    ]),
+    aspect_ratio_default: Some(CommonAspectRatio::Square),
+    quality_options: Some(vec![
+      CommonQuality::High,
+      CommonQuality::Medium,
+      CommonQuality::Low,
+    ]),
+    default_quality: Some(CommonQuality::High),
+    batch_size_min: Some(1),
+    batch_size_max: Some(4),
+    batch_size_default: Some(1),
+    ..Default::default()
+  });
+  
+  models.push(OmniGenImageModelDetails {
     model: CommonImageModel::GptImage1p5,
     full_name: Some("GPT Image 1.5".to_string()),
     text_prompt_supported: Some(true),
@@ -199,6 +223,12 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonAspectRatio::TallTwoByThree,
     ]),
     aspect_ratio_default: Some(CommonAspectRatio::Square),
+    quality_options: Some(vec![
+      CommonQuality::High,
+      CommonQuality::Medium,
+      CommonQuality::Low,
+    ]),
+    default_quality: Some(CommonQuality::High),
     batch_size_min: Some(1),
     batch_size_max: Some(4),
     batch_size_default: Some(1),
@@ -259,6 +289,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
     image_refs_supported: Some(true),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::Auto2k,
+      CommonAspectRatio::Auto3k,
       CommonAspectRatio::Square,
       CommonAspectRatio::SquareHd,
       CommonAspectRatio::WideFourByThree,
@@ -267,7 +298,7 @@ fn build_omni_gen_image_models() -> Vec<OmniGenImageModelDetails> {
       CommonAspectRatio::TallNineBySixteen,
     ]),
     aspect_ratio_default: Some(CommonAspectRatio::Square),
-    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto2k),
+    aspect_ratio_default_when_editing: Some(CommonAspectRatio::Auto3k),
     batch_size_min: Some(1),
     batch_size_max: Some(4),
     batch_size_default: Some(1),
