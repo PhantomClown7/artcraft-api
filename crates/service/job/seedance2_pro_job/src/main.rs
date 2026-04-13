@@ -9,11 +9,13 @@
 
 #[macro_use] extern crate serde_derive;
 
+use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::anyhow;
 use log::{info, warn};
 use sqlx::mysql::MySqlPoolOptions;
+use tokio::sync::Notify;
 
 use bootstrap::bootstrap::{bootstrap, BootstrapArgs};
 use cloud_storage::bucket_client::BucketClient;
@@ -27,6 +29,7 @@ use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::jobs::character_polling_job::character_polling_main_loop::character_polling_main_loop;
+use crate::jobs::credits_checking_job::credits_checking_main_loop::credits_checking_main_loop;
 use crate::jobs::video_polling_job::video_polling_main_loop::video_polling_main_loop;
 use crate::job_dependencies::JobDependencies;
 use crate::startup::build_pager::build_pager;
@@ -121,6 +124,13 @@ async fn main() -> AnyhowResult<()> {
     info!("Max job age threshold: {} hours", duration.num_hours());
   }
 
+  let credits_alert_threshold: u64 = easyenv::get_env_num(
+    "CREDITS_ALERT_THRESHOLD",
+    10_000,
+  )?;
+
+  info!("Credits alert threshold: {}", credits_alert_threshold);
+
   let (pager, pager_worker) = build_pager(server_environment, &container_environment.hostname);
 
   info!("Spawning pager worker.");
@@ -134,6 +144,7 @@ async fn main() -> AnyhowResult<()> {
   });
 
   let application_shutdown = RelaxedAtomicBool::new(false);
+  let shutdown_notify = Arc::new(Notify::new());
   let job_stats = JobStats::new();
 
   let pager_for_shutdown = pager.clone();
@@ -153,7 +164,9 @@ async fn main() -> AnyhowResult<()> {
     poll_interval_millis,
     maybe_pages_per_batch,
     maybe_max_job_age,
+    credits_alert_threshold,
     application_shutdown: application_shutdown.clone(),
+    shutdown_notify: shutdown_notify.clone(),
     pager,
   };
 
@@ -170,12 +183,14 @@ async fn main() -> AnyhowResult<()> {
 
   // Listen for SIGTERM / Ctrl-C to trigger graceful shutdown.
   let application_shutdown_for_signal = application_shutdown.clone();
+  let shutdown_notify_for_signal = shutdown_notify.clone();
 
   tokio::spawn(async move {
     match tokio::signal::ctrl_c().await {
       Ok(()) => {
         info!("Received shutdown signal. Shutting down...");
         application_shutdown_for_signal.set(true);
+        shutdown_notify_for_signal.notify_waiters();
       }
       Err(err) => {
         warn!("Error listening for shutdown signal: {:?}", err);
@@ -183,9 +198,10 @@ async fn main() -> AnyhowResult<()> {
     }
   });
 
-  // Spawn both polling loops as concurrent tasks.
+  // Spawn all polling loops as concurrent tasks.
   let video_deps = job_dependencies.clone();
-  let character_deps = job_dependencies;
+  let character_deps = job_dependencies.clone();
+  let credits_deps = job_dependencies;
 
   let video_handle = tokio::spawn(async move {
     video_polling_main_loop(video_deps).await;
@@ -195,8 +211,12 @@ async fn main() -> AnyhowResult<()> {
     character_polling_main_loop(character_deps).await;
   });
 
-  // Wait for both to finish (they exit when application_shutdown is set).
-  let _ = tokio::join!(video_handle, character_handle);
+  let credits_handle = tokio::spawn(async move {
+    credits_checking_main_loop(credits_deps).await;
+  });
+
+  // Wait for all to finish (they exit when application_shutdown is set).
+  let _ = tokio::join!(video_handle, character_handle, credits_handle);
 
   info!("Shutting down pager worker...");
   pager_for_shutdown.shutdown_worker();
