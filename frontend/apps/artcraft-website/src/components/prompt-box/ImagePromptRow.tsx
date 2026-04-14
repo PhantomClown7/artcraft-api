@@ -11,7 +11,6 @@ import {
   faPlus,
   faSpinner,
   faSpinnerThird,
-  faTrashAlt,
   faXmark,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faImage } from "@fortawesome/pro-regular-svg-icons";
@@ -44,7 +43,7 @@ interface ImagePromptRowProps {
   referenceImages: RefImage[];
   setReferenceImages: (images: RefImage[]) => void;
   onPickFromLibrary?: () => void;
-  onClearAll?: () => void;
+  onClearAll?: () => void; // unused, kept for API compat
   className?: string;
 
   // Video mode props
@@ -53,6 +52,7 @@ interface ImagePromptRowProps {
   endFrameImage?: RefImage;
   setEndFrameImage?: (image?: RefImage) => void;
   showEndFrameSection?: boolean;
+  onPickEndFrameFromLibrary?: () => void;
 }
 
 export const ImagePromptRow = ({
@@ -67,6 +67,7 @@ export const ImagePromptRow = ({
   endFrameImage,
   setEndFrameImage,
   showEndFrameSection,
+  onPickEndFrameFromLibrary,
 }: ImagePromptRowProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const endFrameInputRef = useRef<HTMLInputElement>(null);
@@ -227,13 +228,16 @@ export const ImagePromptRow = ({
         />
       )}
       <div
-        className={twMerge("glass flex rounded-t-xl", className)}
+        className={twMerge(
+          "glass flex flex-col sm:flex-row rounded-t-xl",
+          className,
+        )}
         onMouseDown={(e) => e.stopPropagation()}
         onClick={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
       >
         <div className="flex min-w-0 flex-1 gap-2 px-3 py-2">
-          <div className="flex grow flex-col gap-1">
+          <div className="flex grow flex-col gap-1 min-w-32">
             <div className="flex items-center gap-2 text-white/90">
               <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
               <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -248,7 +252,7 @@ export const ImagePromptRow = ({
             <span className="text-[13px] text-white/60">{sectionSubtitle}</span>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {allowReorder ? (
               <DndContext
                 sensors={sensors}
@@ -325,7 +329,7 @@ export const ImagePromptRow = ({
                 >
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                    className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
                   >
                     <FontAwesomeIcon
                       icon={faPlus}
@@ -336,7 +340,7 @@ export const ImagePromptRow = ({
               ) : (
                 <button
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
                 >
                   <FontAwesomeIcon
                     icon={faPlus}
@@ -349,10 +353,10 @@ export const ImagePromptRow = ({
 
         {/* End frame section */}
         {isVideo && showEndFrameSection && (
-          <div className="flex min-w-0 flex-1 items-stretch gap-3 pe-3">
+          <div className="flex min-w-0 flex-1 items-stretch gap-2 px-3 py-2 sm:py-0 sm:pe-3 sm:ps-0 border-t sm:border-t-0 border-white/10">
             <div className="flex grow gap-1">
-              <div className="w-[1px] bg-white/10" />
-              <div className="flex grow flex-col gap-1 p-2">
+              <div className="hidden sm:block w-[1px] bg-white/10" />
+              <div className="flex grow flex-col gap-1 sm:p-2">
                 <div className="flex items-center gap-2 text-white/90">
                   <FontAwesomeIcon icon={faImage} className="h-3.5 w-3.5" />
                   <span className="flex items-center gap-1.5 text-sm font-medium">
@@ -367,7 +371,7 @@ export const ImagePromptRow = ({
             </div>
             <div className="flex items-center gap-2">
               {endFrameImage ? (
-                <div className="group relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+                <div className="group relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
                   <img
                     src={endFrameImage.url}
                     alt="End frame"
@@ -375,23 +379,61 @@ export const ImagePromptRow = ({
                   />
                   <button
                     onClick={() => setEndFrameImage?.(undefined)}
-                    className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-black group-hover:opacity-100"
+                    className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
                   >
                     <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
                   </button>
                 </div>
               ) : uploadingEndFrame ? (
-                <div className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
+                <div className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-white/30 bg-white/5">
                   <FontAwesomeIcon
                     icon={faSpinnerThird}
                     spin
                     className="h-6 w-6 text-white"
                   />
                 </div>
+              ) : onPickEndFrameFromLibrary ? (
+                <Tooltip
+                  interactive
+                  position="top"
+                  delay={100}
+                  className="bg-ui-controls text-base-fg border border-ui-panel-border p-2 -mb-0.5"
+                  closeOnClick
+                  content={
+                    <div className="flex flex-col gap-1.5">
+                      <Button
+                        variant="primary"
+                        onClick={() => endFrameInputRef.current?.click()}
+                        icon={faPlus}
+                        className="w-full"
+                      >
+                        Upload
+                      </Button>
+                      <Button
+                        variant="action"
+                        onClick={onPickEndFrameFromLibrary}
+                        icon={faImages}
+                        className="w-full bg-white/15 hover:bg-white/20"
+                      >
+                        Pick from library
+                      </Button>
+                    </div>
+                  }
+                >
+                  <button
+                    onClick={() => endFrameInputRef.current?.click()}
+                    className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                  >
+                    <FontAwesomeIcon
+                      icon={faPlus}
+                      className="text-2xl text-white/80"
+                    />
+                  </button>
+                </Tooltip>
               ) : (
                 <button
                   onClick={() => endFrameInputRef.current?.click()}
-                  className="flex aspect-square w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
+                  className="flex aspect-square w-10 sm:w-14 items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-white/25 bg-white/5 transition-all hover:border-white/40 hover:bg-white/10"
                 >
                   <FontAwesomeIcon
                     icon={faPlus}
@@ -399,21 +441,6 @@ export const ImagePromptRow = ({
                   />
                 </button>
               )}
-            </div>
-          </div>
-        )}
-
-        {/* Clear all refs */}
-        {onClearAll && (
-          <div className="flex items-center">
-            <div className="h-full w-[1px] bg-white/10" />
-            <div className="p-2">
-              <button
-                onClick={onClearAll}
-                className="flex h-8 w-8 items-center justify-center rounded-md text-white/50 transition-colors hover:bg-white/10 hover:text-white/80"
-              >
-                <FontAwesomeIcon icon={faTrashAlt} className="h-3.5 w-3.5" />
-              </button>
             </div>
           </div>
         )}
@@ -431,7 +458,7 @@ const ImageThumbnail = ({
   image: RefImage;
   onRemove: (id: string) => void;
 }) => (
-  <div className="group glass relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
+  <div className="group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-all hover:border-white/80">
     <img
       src={image.url}
       alt="Reference"
@@ -442,7 +469,7 @@ const ImageThumbnail = ({
         e.stopPropagation();
         onRemove(image.id);
       }}
-      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-black group-hover:opacity-100"
+      className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
     >
       <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
     </button>
@@ -479,7 +506,7 @@ const SortableImage = ({
       style={style}
       {...(allowReorder ? { ...attributes, ...listeners } : {})}
       className={twMerge(
-        "group glass relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-opacity",
+        "group glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30 transition-opacity",
         allowReorder
           ? "cursor-move hover:border-white/80"
           : "cursor-pointer hover:border-white/80",
@@ -498,7 +525,7 @@ const SortableImage = ({
         }}
         onMouseDown={(e) => e.stopPropagation()}
         onPointerDown={(e) => e.stopPropagation()}
-        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white opacity-0 backdrop-blur-md transition-colors hover:bg-black group-hover:opacity-100"
+        className="absolute right-[2px] top-[2px] flex h-5 w-5 cursor-pointer items-center justify-center rounded-full bg-black/50 text-white sm:opacity-0 backdrop-blur-md transition-colors hover:bg-black sm:group-hover:opacity-100"
       >
         <FontAwesomeIcon icon={faXmark} className="h-2.5 w-2.5" />
       </button>
@@ -510,7 +537,7 @@ const UploadingThumbnail = ({ file }: { file: File }) => {
   const previewUrl = useMemo(() => URL.createObjectURL(file), [file]);
   useEffect(() => () => URL.revokeObjectURL(previewUrl), [previewUrl]);
   return (
-    <div className="glass relative aspect-square w-14 overflow-hidden rounded-lg border-2 border-white/30">
+    <div className="glass relative aspect-square w-10 sm:w-14 overflow-hidden rounded-lg border-2 border-white/30">
       <div className="absolute inset-0">
         <img
           src={previewUrl}

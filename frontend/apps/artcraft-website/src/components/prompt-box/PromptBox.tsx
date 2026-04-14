@@ -9,10 +9,15 @@ import {
 } from "react";
 import { twMerge } from "tailwind-merge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faMusic, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faMusic,
+  faUserGroup,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import { GenerateButton } from "@storyteller/ui-button";
 import { Tooltip } from "@storyteller/ui-tooltip";
 import { ImagePromptRow } from "./ImagePromptRow";
+import { MentionTextarea } from "./MentionTextarea";
 import type { RefImage, MentionItem } from "./types";
 
 // ── @-mention color palette ─────────────────────────────────────────────
@@ -33,7 +38,13 @@ const VIDEO_COLORS = [
 
 const AUDIO_COLORS = ["rgb(192, 132, 252)", "rgb(232, 121, 249)"];
 
-function getMentionColor(label: string): string {
+const CHARACTER_COLORS = [
+  "rgb(45, 212, 191)", // teal
+  "rgb(34, 197, 94)", // emerald
+  "rgb(14, 165, 233)", // sky
+];
+
+function getMentionColor(label: string, mentionItems?: MentionItem[]): string {
   const imgMatch = label.match(/^@Image(\d+)$/);
   if (imgMatch)
     return IMAGE_COLORS[(parseInt(imgMatch[1]) - 1) % IMAGE_COLORS.length];
@@ -43,6 +54,12 @@ function getMentionColor(label: string): string {
   const audMatch = label.match(/^@Audio(\d+)$/);
   if (audMatch)
     return AUDIO_COLORS[(parseInt(audMatch[1]) - 1) % AUDIO_COLORS.length];
+  // Character mentions: match by name from mentionItems
+  if (mentionItems) {
+    const charItems = mentionItems.filter((m) => m.type === "character");
+    const idx = charItems.findIndex((m) => m.label === label);
+    if (idx !== -1) return CHARACTER_COLORS[idx % CHARACTER_COLORS.length];
+  }
   return "rgb(255, 255, 255)";
 }
 
@@ -77,15 +94,15 @@ interface PromptBoxProps {
 
   // Pick from library
   onPickFromLibrary?: () => void;
+  onPickEndFrameFromLibrary?: () => void;
   // Clear all references (images, end frame, videos, audios)
   onClearAllRefs?: () => void;
 
-  // Clear session button
-  showClearSession?: boolean;
-  onClearSession?: () => void;
-
   // Media reference row (video/audio refs, rendered between image row and prompt)
   mediaReferenceRow?: ReactNode;
+
+  // Model selector (rendered above the toolbar, typically hidden on desktop via lg:hidden)
+  modelSelector?: ReactNode;
 
   // @-mention support (enables colored prompt overlay + autocomplete)
   mentionItems?: MentionItem[];
@@ -114,16 +131,17 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       leftToolbar,
       rightToolbar,
       onPickFromLibrary,
+      onPickEndFrameFromLibrary,
       onClearAllRefs,
-      showClearSession,
-      onClearSession,
       mediaReferenceRow,
+      modelSelector,
       mentionItems,
     },
     ref,
   ) => {
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const highlightRef = useRef<HTMLDivElement>(null);
+    const mentionEditorRef = useRef<HTMLDivElement>(null);
     const [isFocused, setIsFocused] = useState(false);
     const [showImagePrompts, setShowImagePrompts] = useState(false);
 
@@ -156,6 +174,14 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
       }
     }, [prompt]);
+
+    // Move caret to end on mount so autoFocus doesn't leave it at position 0
+    useEffect(() => {
+      const ta = textareaRef.current;
+      if (ta && ta.value.length > 0) {
+        ta.setSelectionRange(ta.value.length, ta.value.length);
+      }
+    }, []);
 
     // Sync scroll between textarea and highlight overlay
     const handleScroll = useCallback(() => {
@@ -259,16 +285,45 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       ],
     );
 
+    // Build a regex that matches all known @-mention labels
+    const mentionRegex = useMemo(() => {
+      if (!mentionItems?.length) return null;
+      // Escape special regex characters in labels and sort longest first
+      const escaped = mentionItems
+        .map((m) => m.label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
+        .sort((a, b) => b.length - a.length);
+      return new RegExp(`(${escaped.join("|")})`, "g");
+    }, [mentionItems]);
+
+    // Set of valid mention labels for fast lookup
+    const mentionLabelSet = useMemo(
+      () => new Set(mentionItems?.map((m) => m.label)),
+      [mentionItems],
+    );
+
+    // Build label → color map for MentionTextarea
+    const mentionColorMap = useMemo(() => {
+      if (!mentionItems?.length) return {};
+      const map: Record<string, string> = {};
+      for (const item of mentionItems) {
+        map[item.label] = getMentionColor(item.label, mentionItems);
+      }
+      return map;
+    }, [mentionItems]);
+
     // Render highlighted prompt with colored @-mentions
     const renderHighlightedPrompt = useCallback(() => {
-      if (!hasMentionItems) return null;
-      const parts = prompt.split(/(@(?:Image|Video|Audio)\d+)/g);
+      if (!hasMentionItems || !mentionRegex) return null;
+      const parts = prompt.split(mentionRegex);
       return parts.map((part, i) => {
-        if (/^@(?:Image|Video|Audio)\d+$/.test(part)) {
+        if (mentionLabelSet.has(part)) {
           return (
             <span
               key={i}
-              style={{ color: getMentionColor(part), fontWeight: 600 }}
+              style={{
+                color: getMentionColor(part, mentionItems),
+                fontWeight: 600,
+              }}
             >
               {part}
             </span>
@@ -276,21 +331,10 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
         }
         return <span key={i}>{part}</span>;
       });
-    }, [prompt, hasMentionItems]);
+    }, [prompt, hasMentionItems, mentionRegex, mentionLabelSet, mentionItems]);
 
     return (
       <div ref={ref}>
-        {showClearSession && (
-          <div className="mb-2 flex w-full justify-end">
-            <button
-              onClick={onClearSession}
-              className="rounded-md bg-red-500/20 px-3 py-1 text-xs text-white/70 transition-colors hover:bg-red-500/30"
-            >
-              Clear session
-            </button>
-          </div>
-        )}
-
         <div className="relative flex flex-col">
           {isImageRowVisible && (
             <ImagePromptRow
@@ -304,6 +348,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               endFrameImage={endFrameImage}
               setEndFrameImage={onEndFrameImageChange}
               showEndFrameSection={showEndFrameSection}
+              onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
             />
           )}
 
@@ -311,7 +356,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
 
           <div
             className={twMerge(
-              "glass rounded-xl p-4 !transition-all duration-200",
+              "glass rounded-xl p-3 sm:p-4 !transition-all duration-200",
               hasAnyRowAbove && "rounded-t-none",
               isFocused && "ring-1 ring-primary",
             )}
@@ -350,95 +395,135 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
               )}
 
               <div className="relative flex-1">
-                {/* Highlighted prompt overlay for @-mentions */}
-                {hasMentionItems && (
-                  <div
-                    ref={highlightRef}
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 max-h-[5.5em] overflow-y-auto whitespace-pre-wrap break-words text-sm text-white"
-                  >
-                    {renderHighlightedPrompt()}
-                  </div>
-                )}
-
-                <textarea
-                  ref={textareaRef}
-                  rows={1}
-                  autoFocus
-                  placeholder={placeholder}
-                  className={twMerge(
-                    "max-h-[5.5em] w-full flex-1 resize-none overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",
-                    hasMentionItems && "text-transparent caret-white",
-                  )}
-                  value={prompt}
-                  onChange={handleChange}
-                  onKeyDown={handleKeyDown}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  onScroll={handleScroll}
-                />
-
-                {/* @-mention autocomplete dropdown */}
-                {mentionOpen && filteredMentionItems.length > 0 && (
-                  <div className="absolute bottom-full left-0 z-50 mb-1 w-64 overflow-hidden rounded-lg border border-white/10 bg-[#2a2a2e] shadow-lg backdrop-blur-xl">
-                    <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
-                      Reference Files
-                    </div>
-                    {filteredMentionItems.map((item, i) => (
-                      <button
-                        key={item.label}
-                        className={twMerge(
-                          "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-white transition-colors",
-                          i === mentionIndex
-                            ? "bg-white/10"
-                            : "hover:bg-white/5",
-                        )}
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          insertMention(item.label);
-                        }}
-                        onMouseEnter={() => setMentionIndex(i)}
+                {hasMentionItems && mentionItems ? (
+                  <MentionTextarea
+                    ref={mentionEditorRef}
+                    value={prompt}
+                    onChange={onPromptChange}
+                    mentionItems={mentionItems}
+                    placeholder={placeholder}
+                    className="max-h-[5.5em] w-full text-white"
+                    colorMap={mentionColorMap}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey && !e.metaKey) {
+                        e.preventDefault();
+                        onSubmit();
+                      }
+                    }}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
+                  />
+                ) : (
+                  <>
+                    {hasMentionItems && (
+                      <div
+                        ref={highlightRef}
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 max-h-[5.5em] overflow-y-auto whitespace-pre-wrap break-words text-sm text-white"
                       >
-                        <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-black/20">
-                          {item.type === "image" && item.preview ? (
-                            <img
-                              src={item.preview}
-                              alt={item.label}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : item.type === "video" && item.preview ? (
-                            <video
-                              src={item.preview}
-                              muted
-                              preload="metadata"
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            <FontAwesomeIcon
-                              icon={item.type === "video" ? faVideo : faMusic}
-                              className="h-3.5 w-3.5 text-white/60"
-                            />
-                          )}
+                        {renderHighlightedPrompt()}
+                      </div>
+                    )}
+
+                    <textarea
+                      ref={textareaRef}
+                      rows={1}
+                      autoFocus
+                      placeholder={placeholder}
+                      className={twMerge(
+                        "max-h-[5.5em] w-full flex-1 resize-none overflow-y-auto bg-transparent text-md text-white placeholder-white/50 focus:outline-none",
+                        hasMentionItems && "text-transparent caret-white",
+                      )}
+                      value={prompt}
+                      onChange={handleChange}
+                      onKeyDown={handleKeyDown}
+                      onFocus={() => setIsFocused(true)}
+                      onBlur={() => setIsFocused(false)}
+                      onScroll={handleScroll}
+                    />
+
+                    {mentionOpen && filteredMentionItems.length > 0 && (
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-64 max-w-[calc(100vw-3rem)] overflow-hidden rounded-lg border border-white/10 bg-[#2a2a2e] shadow-lg backdrop-blur-xl">
+                        <div className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-white/50">
+                          Mentions
                         </div>
-                        <span
-                          className="font-medium"
-                          style={{ color: getMentionColor(item.label) }}
-                        >
-                          {item.label}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
+                        {filteredMentionItems.map((item, i) => (
+                          <button
+                            key={item.label}
+                            className={twMerge(
+                              "flex w-full cursor-pointer items-center gap-2.5 px-3 py-2 text-sm text-white transition-colors",
+                              i === mentionIndex
+                                ? "bg-white/10"
+                                : "hover:bg-white/5",
+                            )}
+                            onMouseDown={(e) => {
+                              e.preventDefault();
+                              insertMention(item.label);
+                            }}
+                            onMouseEnter={() => setMentionIndex(i)}
+                          >
+                            <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-md border border-white/20 bg-black/20">
+                              {(item.type === "image" ||
+                                item.type === "character") &&
+                              item.preview ? (
+                                <img
+                                  src={item.preview}
+                                  alt={item.label}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : item.type === "video" && item.preview ? (
+                                <video
+                                  src={item.preview}
+                                  muted
+                                  preload="metadata"
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : item.type === "character" ? (
+                                <FontAwesomeIcon
+                                  icon={faUserGroup}
+                                  className="h-3.5 w-3.5 text-white/60"
+                                />
+                              ) : (
+                                <FontAwesomeIcon
+                                  icon={
+                                    item.type === "video" ? faVideo : faMusic
+                                  }
+                                  className="h-3.5 w-3.5 text-white/60"
+                                />
+                              )}
+                            </div>
+                            <span
+                              className="font-medium"
+                              style={{
+                                color: getMentionColor(
+                                  item.label,
+                                  mentionItems,
+                                ),
+                              }}
+                            >
+                              {item.label}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2">{leftToolbar}</div>
-              <div className="flex items-center gap-2">
+            {/* Toolbar */}
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                {modelSelector && (
+                  <div className="lg:hidden">{modelSelector}</div>
+                )}
+                {leftToolbar}
+              </div>
+              <div className="flex items-center gap-2 sm:shrink-0">
                 {rightToolbar}
                 <GenerateButton
-                  className="flex items-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
+                  className="flex flex-1 sm:flex-none items-center justify-center border-none bg-primary px-3 text-sm text-white disabled:cursor-not-allowed disabled:opacity-50"
                   onClick={onSubmit}
                   disabled={disabled ?? (!prompt.trim() || isSubmitting)}
                   loading={isSubmitting}

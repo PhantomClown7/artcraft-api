@@ -8,6 +8,7 @@ export interface ImageCostParams {
   model: string;
   aspectRatio?: string;
   resolution?: string;
+  quality?: string;
   numImages: number;
   hasReferenceImages: boolean;
   imageMediaTokenCount?: number;
@@ -29,6 +30,7 @@ export function useImageCostEstimate(params: ImageCostParams): number | null {
       model: params.model,
       aspect_ratio: params.aspectRatio ?? null,
       resolution: params.resolution ?? null,
+      quality: params.quality ?? null,
       image_batch_count: params.numImages,
       image_media_tokens: params.hasReferenceImages
         ? new Array(params.imageMediaTokenCount ?? 1).fill("placeholder")
@@ -69,6 +71,7 @@ export interface VideoCostParams {
   aspectRatio?: string;
   resolution?: string | null;
   duration?: number | null;
+  numVideos?: number;
   hasStartFrame: boolean;
   hasEndFrame: boolean;
   isReferenceMode: boolean;
@@ -94,6 +97,7 @@ export function useVideoCostEstimate(params: VideoCostParams): number | null {
       resolution: params.resolution ?? null,
       duration_seconds: params.duration ?? null,
       generate_audio: params.generateAudio ?? null,
+      video_batch_count: params.numVideos ?? 1,
     };
 
     // Wire up frame/reference tokens based on mode
@@ -128,6 +132,7 @@ export function useVideoCostEstimate(params: VideoCostParams): number | null {
     params.aspectRatio,
     params.resolution,
     params.duration,
+    params.numVideos,
     params.hasStartFrame,
     params.hasEndFrame,
     params.isReferenceMode,

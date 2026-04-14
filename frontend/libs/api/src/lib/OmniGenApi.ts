@@ -53,6 +53,7 @@ export interface OmniGenVideoRequest {
   reference_image_media_tokens?: string[] | null;
   reference_video_media_tokens?: string[] | null;
   reference_audio_media_tokens?: string[] | null;
+  reference_character_tokens?: string[] | null;
   negative_prompt?: string | null;
 }
 
@@ -75,6 +76,7 @@ export interface OmniGenVideoGenerateResponse {
 
 export interface OmniGenImageModelInfo {
   model: string;
+  is_disabled: boolean | null;
   full_name: string | null;
   aspect_ratio_options: string[] | null;
   aspect_ratio_default: string | null;
@@ -106,6 +108,7 @@ export interface OmniGenImageModelsResponse {
 
 export interface OmniGenVideoModelInfo {
   model: string;
+  is_disabled: boolean | null;
   full_name: string | null;
   aspect_ratio_options: string[] | null;
   aspect_ratio_default: string | null;

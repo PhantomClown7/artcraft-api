@@ -2,14 +2,7 @@ import { Modal } from "@storyteller/ui-modal";
 import { Button } from "@storyteller/ui-button";
 import { LoadingSpinner } from "@storyteller/ui-loading-spinner";
 import { toast } from "@storyteller/ui-toaster";
-import { Tooltip } from "@storyteller/ui-tooltip";
-import {
-  useEffect,
-  useState,
-  useMemo,
-  useCallback,
-  useRef,
-} from "react";
+import { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import { MediaFilesApi, PromptsApi } from "@storyteller/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -39,7 +32,6 @@ import {
 } from "@storyteller/model-list";
 import { ActionReminderModal } from "@storyteller/ui-action-reminder-modal";
 import { Viewer3D } from "@storyteller/ui-viewer-3d";
-import dayjs from "dayjs";
 import useEmblaCarousel from "embla-carousel-react";
 import type { EmblaOptionsType } from "embla-carousel";
 
@@ -58,7 +50,7 @@ export interface LightboxItem {
 }
 
 interface ContextImage {
-  media_links: { cdn_url: string; maybe_thumbnail_template: string };
+  media_links: { cdn_url: string; maybe_thumbnail_template: string | null };
   media_token: string;
   semantic: string;
 }
@@ -147,6 +139,8 @@ interface LightboxProps {
   onNavigatePrev?: () => void;
   onNavigateNext?: () => void;
   onDeleted?: (id: string) => void;
+  /** When false, suppress batch carousel (batch siblings shown as separate gallery cards instead). Default true. */
+  showBatchCarousel?: boolean;
 }
 
 export function Lightbox({
@@ -161,6 +155,7 @@ export function Lightbox({
   onNavigatePrev,
   onNavigateNext,
   onDeleted,
+  showBatchCarousel = true,
 }: LightboxProps) {
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [promptData, setPromptData] = useState<PromptData>(EMPTY_PROMPT);
@@ -171,7 +166,9 @@ export function Lightbox({
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [isPromptExpanded, setIsPromptExpanded] = useState(false);
   const [isPromptClamped, setIsPromptClamped] = useState(false);
-  const [discoveredBatchToken, setDiscoveredBatchToken] = useState<string | null>(null);
+  const [discoveredBatchToken, setDiscoveredBatchToken] = useState<
+    string | null
+  >(null);
   const promptRef = useRef<HTMLDivElement>(null);
 
   const promptCopy = useCopyFeedback();
@@ -215,10 +212,7 @@ export function Lightbox({
           if (batchToken) setDiscoveredBatchToken(batchToken);
         }
 
-        if (
-          mediaResponse.success &&
-          mediaResponse.data?.maybe_prompt_token
-        ) {
+        if (mediaResponse.success && mediaResponse.data?.maybe_prompt_token) {
           const promptResponse = await promptsApi.GetPromptsByToken({
             token: mediaResponse.data.maybe_prompt_token,
           });
@@ -248,7 +242,9 @@ export function Lightbox({
   }, [mediaToken, isOpen, mediaFilesApi, promptsApi]);
 
   // Fetch batch images (from prop or auto-discovered batch token)
-  const effectiveBatchToken = propBatchImageToken || discoveredBatchToken;
+  const effectiveBatchToken = showBatchCarousel
+    ? propBatchImageToken || discoveredBatchToken
+    : undefined;
 
   useEffect(() => {
     if (!effectiveBatchToken || !isOpen) {
@@ -363,11 +359,19 @@ export function Lightbox({
 
   const selectedImageUrl = effectiveImageUrls[selectedIndex] ?? null;
   const selectedMediaToken = useMemo(() => {
-    return batchTokens?.[selectedIndex] ?? propMediaTokens?.[selectedIndex] ?? mediaToken;
+    return (
+      batchTokens?.[selectedIndex] ??
+      propMediaTokens?.[selectedIndex] ??
+      mediaToken
+    );
   }, [batchTokens, propMediaTokens, selectedIndex, mediaToken]);
 
-  const isVideo = selectedImageUrl ? isVideoUrl(selectedImageUrl) : (propMediaClass === "video");
-  const is3D = selectedImageUrl ? is3DModelUrl(selectedImageUrl) : (propMediaClass === "dimensional");
+  const isVideo = selectedImageUrl
+    ? isVideoUrl(selectedImageUrl)
+    : propMediaClass === "video";
+  const is3D = selectedImageUrl
+    ? is3DModelUrl(selectedImageUrl)
+    : propMediaClass === "dimensional";
 
   // Keyboard navigation
   useEffect(() => {
@@ -410,12 +414,13 @@ export function Lightbox({
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        className="rounded-xl h-[680px] w-[1100px] max-w-[95vw] max-h-[90vh] p-0"
+        className="rounded-xl h-[90vh] sm:h-[680px] w-full sm:w-[1100px] max-w-[95vw] max-h-[90vh] p-0 border-white/5 shadow-2xl"
+        backdropClassName="!bg-black/80"
         showClose={false}
       >
-        <div className="flex h-full">
+        <div className="flex flex-col sm:flex-row h-full">
           {/* Media preview panel */}
-          <div className="group/nav relative flex h-full flex-1 items-center justify-center overflow-hidden rounded-l-xl bg-black">
+          <div className="group/nav relative flex h-[45vh] sm:h-full flex-1 items-center justify-center overflow-hidden rounded-t-xl sm:rounded-l-xl sm:rounded-tr-none bg-black">
             {/* Close button */}
             <button
               onClick={onClose}
@@ -444,8 +449,16 @@ export function Lightbox({
                 autoPlay
                 muted
                 playsInline
+                disablePictureInPicture
+                controlsList="nodownload noplaybackrate nofullscreen"
                 className="h-full w-full object-contain"
                 onLoadedData={() => setMediaLoaded(true)}
+                ref={(el) => {
+                  if (el) {
+                    el.setAttribute("webkit-playsinline", "true");
+                    el.setAttribute("x-webkit-airplay", "deny");
+                  }
+                }}
               >
                 <source src={selectedImageUrl} type="video/mp4" />
               </video>
@@ -493,7 +506,10 @@ export function Lightbox({
 
                 {effectiveImageUrls.length > 1 && (
                   <div className="mt-3 px-2 pb-2">
-                    <div className="embla-thumbs overflow-hidden" ref={emblaThumbsRef}>
+                    <div
+                      className="embla-thumbs overflow-hidden"
+                      ref={emblaThumbsRef}
+                    >
                       <div className="embla-thumbs__container flex gap-2 justify-center">
                         {effectiveImageUrls.map((url, idx) => (
                           <button
@@ -521,7 +537,7 @@ export function Lightbox({
             )}
 
             {!mediaLoaded && selectedImageUrl && !isVideo && !is3D && (
-              <div className="absolute inset-0 flex items-center justify-center bg-ui-panel">
+              <div className="absolute inset-0 flex items-center justify-center bg-black">
                 <LoadingSpinner className="h-12 w-12 text-base-fg" />
               </div>
             )}
@@ -533,7 +549,7 @@ export function Lightbox({
                   e.stopPropagation();
                   onNavigatePrev();
                 }}
-                className="absolute left-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100"
+                className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Previous item"
               >
                 <FontAwesomeIcon icon={faChevronLeft} className="text-lg" />
@@ -545,7 +561,7 @@ export function Lightbox({
                   e.stopPropagation();
                   onNavigateNext();
                 }}
-                className="absolute right-3 top-1/2 -translate-y-1/2 z-30 flex h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/70 opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white group-hover/nav:opacity-100"
+                className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-30 flex h-9 w-9 sm:h-10 sm:w-10 items-center justify-center rounded-full bg-black/50 text-white/70 sm:opacity-0 transition-opacity duration-200 hover:bg-black/70 hover:text-white sm:group-hover/nav:opacity-100"
                 aria-label="Next item"
               >
                 <FontAwesomeIcon icon={faChevronRight} className="text-lg" />
@@ -554,8 +570,8 @@ export function Lightbox({
           </div>
 
           {/* Info sidebar */}
-          <div className="flex h-full w-[300px] shrink-0 flex-col bg-ui-panel rounded-r-xl">
-            <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5 min-h-0">
+          <div className="flex w-full sm:w-[300px] shrink-0 flex-col bg-ui-panel rounded-b-xl sm:rounded-b-none sm:rounded-r-xl min-h-0 flex-1 sm:flex-none sm:h-full overflow-hidden">
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-5 min-h-0">
               {promptData.loading ? (
                 <div className="space-y-6 animate-pulse">
                   <div className="space-y-2">
@@ -594,9 +610,7 @@ export function Lightbox({
                               icon={promptCopy.copied ? faCheck : faCopy}
                               className="h-3 w-3"
                             />
-                            <span>
-                              {promptCopy.copied ? "Copied" : "Copy"}
-                            </span>
+                            <span>{promptCopy.copied ? "Copied" : "Copy"}</span>
                           </button>
                         )}
                       </div>
@@ -616,9 +630,7 @@ export function Lightbox({
                         (isPromptClamped || isPromptExpanded) && (
                           <button
                             className="flex w-full items-center justify-center gap-1 text-xs text-white/70 hover:text-white transition-colors py-1"
-                            onClick={() =>
-                              setIsPromptExpanded((prev) => !prev)
-                            }
+                            onClick={() => setIsPromptExpanded((prev) => !prev)}
                           >
                             <span>
                               {isPromptExpanded ? "Show less" : "Show more"}
@@ -639,10 +651,12 @@ export function Lightbox({
                         <div className="grid grid-cols-5 gap-2">
                           {promptData.contextImages.map(
                             (contextImage, index) => {
-                              const { thumbnail } =
-                                getContextImageThumbnail(contextImage, {
+                              const { thumbnail } = getContextImageThumbnail(
+                                contextImage,
+                                {
                                   size: THUMBNAIL_SIZES.SMALL,
-                                });
+                                },
+                              );
                               return (
                                 <a
                                   key={contextImage.media_token}
@@ -716,7 +730,7 @@ export function Lightbox({
             </div>
 
             {/* Action buttons */}
-            <div className="p-4 pt-2 space-y-2 border-t border-white/5">
+            <div className="p-4 space-y-2 border-t border-white/5">
               <div className="grid grid-cols-2 gap-2">
                 <Button
                   className="w-full border border-ui-panel-border bg-ui-controls/40 hover:bg-ui-controls/60 text-white"

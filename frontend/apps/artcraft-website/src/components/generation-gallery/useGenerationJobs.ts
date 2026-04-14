@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { JobsApi, JobStatus } from "@storyteller/api";
+import { JobsApi, JobStatus, MediaFilesApi } from "@storyteller/api";
 import type { Job } from "@storyteller/api";
+import { getMediaThumbnail, THUMBNAIL_SIZES } from "@storyteller/common";
 import {
   getModelDisplayName,
   getProviderDisplayName,
@@ -13,6 +14,7 @@ import type { GalleryItem } from "./useGalleryData";
 export interface InProgressJob {
   id: string;
   prompt: string;
+  modelId: string;
   modelLabel: string;
   progress: number;
   estimatedTimeLeftMs?: number;
@@ -21,6 +23,7 @@ export interface InProgressJob {
 export interface FailedJob {
   id: string;
   prompt: string;
+  modelId: string;
   modelLabel: string;
   failureReason?: string;
   failureMessage?: string;
@@ -102,6 +105,7 @@ function jobToInProgress(job: Job): InProgressJob {
   return {
     id: job.job_token,
     prompt: getPrompt(job),
+    modelId: job.request.maybe_model_type ?? "",
     modelLabel: getModelLabel(job),
     progress,
     estimatedTimeLeftMs,
@@ -124,6 +128,7 @@ function jobToFailed(job: Job): FailedJob {
   return {
     id: job.job_token,
     prompt: getPrompt(job),
+    modelId: job.request.maybe_model_type ?? "",
     modelLabel: getModelLabel(job),
     failureReason,
     failureMessage,
@@ -145,7 +150,49 @@ function jobToGalleryItem(job: Job): GalleryItem | null {
     createdAt:
       result.maybe_successfully_completed_at || job.updated_at,
     mediaClass: mediaType === "video" ? "video" : "image",
+    modelId: job.request.maybe_model_type ?? undefined,
   };
+}
+
+/** Expand a single GalleryItem into its batch siblings (if any). */
+async function expandBatchItems(
+  item: GalleryItem,
+  mediaFilesApi: MediaFilesApi,
+): Promise<GalleryItem[]> {
+  try {
+    const mediaResponse = await mediaFilesApi.GetMediaFileByToken({
+      mediaFileToken: item.id,
+    });
+    const batchToken = (mediaResponse.data as any)?.maybe_batch_token;
+    if (!batchToken) return [item];
+
+    const batchResponse = await mediaFilesApi.GetMediaFilesByBatchToken({
+      batchToken,
+    });
+    if (!batchResponse.success || !batchResponse.data?.length) return [item];
+
+    return batchResponse.data
+      .map((file: any): GalleryItem | null => {
+        const cdnUrl = file.media_links?.cdn_url;
+        if (!cdnUrl) return null;
+        const thumbnail = getMediaThumbnail(file.media_links, item.mediaClass, {
+          size: THUMBNAIL_SIZES.LARGE,
+        });
+        return {
+          id: file.token,
+          label: item.label,
+          thumbnail: thumbnail || cdnUrl,
+          fullImage: cdnUrl,
+          createdAt: item.createdAt,
+          mediaClass: item.mediaClass,
+          modelId: item.modelId,
+          batchImageToken: batchToken,
+        };
+      })
+      .filter((i): i is GalleryItem => i !== null);
+  } catch {
+    return [item];
+  }
 }
 
 // ── Hook ───────────────────────────────────────────────────────────────────
@@ -155,6 +202,7 @@ export function useGenerationJobs(options: {
 }) {
   const { mediaType } = options;
   const apiRef = useRef(new JobsApi());
+  const mediaApiRef = useRef(new MediaFilesApi());
 
   const [inProgress, setInProgress] = useState<InProgressJob[]>([]);
   const [failed, setFailed] = useState<FailedJob[]>([]);
@@ -209,11 +257,16 @@ export function useGenerationJobs(options: {
             .map(jobToGalleryItem)
             .filter((item): item is GalleryItem => item !== null);
           if (items.length > 0) {
-            setNewlyCompleted((prev) => {
-              // Deduplicate by id
-              const existingIds = new Set(prev.map((i) => i.id));
-              const fresh = items.filter((i) => !existingIds.has(i.id));
-              return [...fresh, ...prev];
+            // Expand batch items (fetch siblings) then update state
+            Promise.all(
+              items.map((item) => expandBatchItems(item, mediaApiRef.current)),
+            ).then((expanded) => {
+              const allItems = expanded.flat();
+              setNewlyCompleted((prev) => {
+                const existingIds = new Set(prev.map((i) => i.id));
+                const fresh = allItems.filter((i) => !existingIds.has(i.id));
+                return [...fresh, ...prev];
+              });
             });
           }
         }

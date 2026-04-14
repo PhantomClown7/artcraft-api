@@ -2,7 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { faImage } from "@fortawesome/pro-solid-svg-icons";
 import { FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenImageModelInfo } from "@storyteller/api";
-import { type PopoverItem } from "@storyteller/ui-popover";
+import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
+import { Tooltip } from "@storyteller/ui-tooltip";
 import {
   PromptBox,
   ImagePickerModal,
@@ -19,13 +20,11 @@ import {
 } from "../../components/generation-gallery";
 import { Lightbox } from "../../components/lightbox/lightbox";
 import { useCreateImageStore } from "./create-image-store";
-import {
-  enqueueImageGeneration,
-  startPolling,
-} from "./generate-image-api";
+import { enqueueImageGeneration, startPolling } from "./generate-image-api";
 import { AspectRatioPicker } from "./components/AspectRatioPicker";
 import { GenerationCountPicker } from "./components/GenerationCountPicker";
 import { ResolutionPicker } from "./components/ResolutionPicker";
+import { QualityPicker } from "./components/QualityPicker";
 import { useImageCostEstimate } from "../../lib/cost-estimate-api";
 import {
   useOmniGenImageModels,
@@ -77,9 +76,11 @@ export default function CreateImage() {
   const selectedModel = useMemo((): OmniGenImageModelInfo | undefined => {
     if (!apiModels.length) return undefined;
     if (ui.selectedModelId) {
-      return apiModels.find((m) => m.model === ui.selectedModelId) ??
+      return (
+        apiModels.find((m) => m.model === ui.selectedModelId) ??
         apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ??
-        apiModels[0];
+        apiModels[0]
+      );
     }
     return apiModels.find((m) => m.model === DEFAULT_MODEL_ID) ?? apiModels[0];
   }, [apiModels, ui.selectedModelId]);
@@ -101,13 +102,17 @@ export default function CreateImage() {
     (v: string | undefined) => setUi({ resolution: v }),
     [setUi],
   );
+  const quality = ui.quality;
+  const setQuality = useCallback(
+    (v: string | undefined) => setUi({ quality: v }),
+    [setUi],
+  );
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [referenceImages, setReferenceImages] = useState<RefImage[]>([]);
   const [isImagePickerOpen, setIsImagePickerOpen] = useState(false);
 
   // Batch store (enqueue flow only)
-  const batches = useCreateImageStore((s) => s.batches);
   const startBatch = useCreateImageStore((s) => s.startBatch);
   const setBatchJobToken = useCreateImageStore((s) => s.setBatchJobToken);
   const completeBatch = useCreateImageStore((s) => s.completeBatch);
@@ -128,20 +133,25 @@ export default function CreateImage() {
 
   // Lightbox
   const flatItems = useMemo(() => {
-    const filtered = gallery.items.filter((i) => !newlyCompletedTokens.has(i.id));
+    const filtered = gallery.items.filter(
+      (i) => !newlyCompletedTokens.has(i.id),
+    );
     return [...jobs.newlyCompleted, ...filtered];
   }, [jobs.newlyCompleted, gallery.items, newlyCompletedTokens]);
 
   const lightbox = useLightboxNav(flatItems);
 
   // Derived
-  const hasAspectRatios = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
+  const hasAspectRatios =
+    (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
   const hasResolutions = (selectedModel?.resolution_options?.length ?? 0) > 0;
+  const hasQualityOptions = (selectedModel?.quality_options?.length ?? 0) > 0;
 
   const estimatedCredits = useImageCostEstimate({
     model: selectedModel?.model ?? "",
     aspectRatio: aspectRatio,
     resolution: hasResolutions ? resolution : undefined,
+    quality: hasQualityOptions ? quality : undefined,
     numImages,
     hasReferenceImages: referenceImages.length > 0,
   });
@@ -205,6 +215,7 @@ export default function CreateImage() {
           model.batch_size_default ?? 1,
         ),
         resolution: model.resolution_default ?? undefined,
+        quality: model.default_quality ?? undefined,
       });
     },
     [setUi],
@@ -214,12 +225,14 @@ export default function CreateImage() {
     (images: { token: string; url: string; thumbnailUrl: string }[]) => {
       const maxImages = selectedModel?.image_refs_max ?? 1;
       const availableSlots = Math.max(0, maxImages - referenceImages.length);
-      const newImages: RefImage[] = images.slice(0, availableSlots).map((img) => ({
-        id: Math.random().toString(36).substring(7),
-        url: img.thumbnailUrl || img.url,
-        file: new File([], "library-image"),
-        mediaToken: img.token,
-      }));
+      const newImages: RefImage[] = images
+        .slice(0, availableSlots)
+        .map((img) => ({
+          id: Math.random().toString(36).substring(7),
+          url: img.thumbnailUrl || img.url,
+          file: new File([], "library-image"),
+          mediaToken: img.token,
+        }));
       setReferenceImages([...referenceImages, ...newImages]);
     },
     [referenceImages, selectedModel],
@@ -248,7 +261,10 @@ export default function CreateImage() {
         numImages,
         aspectRatio: aspectRatio,
         resolution: hasResolutions ? resolution : undefined,
-        imageMediaTokens: imageMediaTokens?.length ? imageMediaTokens : undefined,
+        quality: hasQualityOptions ? quality : undefined,
+        imageMediaTokens: imageMediaTokens?.length
+          ? imageMediaTokens
+          : undefined,
       });
 
       if (!result.success || !result.jobToken) {
@@ -281,8 +297,20 @@ export default function CreateImage() {
       setIsGenerating(false);
     }
   }, [
-    prompt, isGenerating, selectedModel, numImages, aspectRatio, resolution,
-    hasResolutions, referenceImages, startBatch, setBatchJobToken, completeBatch, failBatch,
+    prompt,
+    isGenerating,
+    selectedModel,
+    numImages,
+    aspectRatio,
+    resolution,
+    hasResolutions,
+    quality,
+    hasQualityOptions,
+    referenceImages,
+    startBatch,
+    setBatchJobToken,
+    completeBatch,
+    failBatch,
   ]);
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -318,7 +346,7 @@ export default function CreateImage() {
       }
       promptBox={
         <div
-          className="animate-fade-in-up fixed bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[730px] px-4"
+          className="animate-fade-in-up fixed bottom-2 sm:bottom-3 left-0 right-0 z-30 mx-auto w-full max-w-[900px] px-2 sm:px-4"
           style={{ animationDelay: "150ms" }}
         >
           <PromptBox
@@ -330,18 +358,38 @@ export default function CreateImage() {
             credits={estimatedCredits}
             placeholder="Describe what you want in the image..."
             supportsImagePrompts={!!selectedModel?.image_refs_supported}
-            maxImagePromptCount={selectedModel?.image_refs_max ?? 1}
+            maxImagePromptCount={selectedModel?.image_refs_max ?? 6}
             referenceImages={referenceImages}
             onReferenceImagesChange={setReferenceImages}
             onPickFromLibrary={() => setIsImagePickerOpen(true)}
-            showClearSession={batches.length > 0}
-            onClearSession={useCreateImageStore.getState().reset}
+            modelSelector={
+              <Tooltip content="Model" position="top" className="z-50" closeOnClick>
+                <PopoverMenu
+                  items={modelItems}
+                  onSelect={handleModelChange}
+                  mode="toggle"
+                  panelTitle="Select Model"
+                  showIconsInList
+                  triggerIcon={
+                    <img
+                      src={getModelCreatorIconPath(selectedModel?.model ?? "")}
+                      alt=""
+                      className="h-4 w-4 icon-auto-contrast"
+                    />
+                  }
+                />
+              </Tooltip>
+            }
             leftToolbar={
               <>
                 {hasAspectRatios && selectedModel && (
                   <AspectRatioPicker
-                    aspectRatioOptions={selectedModel.aspect_ratio_options ?? []}
-                    defaultAspectRatio={selectedModel.aspect_ratio_default ?? undefined}
+                    aspectRatioOptions={
+                      selectedModel.aspect_ratio_options ?? []
+                    }
+                    defaultAspectRatio={
+                      selectedModel.aspect_ratio_default ?? undefined
+                    }
                     currentAspectRatio={aspectRatio}
                     handleAspectRatioSelect={setAspectRatio}
                   />
@@ -349,9 +397,21 @@ export default function CreateImage() {
                 {hasResolutions && selectedModel && (
                   <ResolutionPicker
                     resolutionOptions={selectedModel.resolution_options ?? []}
-                    defaultResolution={selectedModel.resolution_default ?? undefined}
+                    defaultResolution={
+                      selectedModel.resolution_default ?? undefined
+                    }
                     currentResolution={resolution}
                     handleResolutionSelect={setResolution}
+                  />
+                )}
+                {hasQualityOptions && selectedModel && (
+                  <QualityPicker
+                    qualityOptions={selectedModel.quality_options ?? []}
+                    defaultQuality={
+                      selectedModel.default_quality ?? undefined
+                    }
+                    currentQuality={quality}
+                    handleQualitySelect={setQuality}
                   />
                 )}
               </>
@@ -385,6 +445,7 @@ export default function CreateImage() {
             cdnUrl={lightbox.lightboxItem?.fullImage}
             mediaClass={lightbox.lightboxItem?.mediaClass}
             batchImageToken={lightbox.lightboxItem?.batchImageToken}
+            showBatchCarousel={false}
             onNavigatePrev={lightbox.navigatePrev}
             onNavigateNext={lightbox.navigateNext}
             onDeleted={gallery.removeItem}
