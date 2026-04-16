@@ -19,6 +19,7 @@ use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraf
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance_1_0_lite::plan_generate_video_artcraft_seedance_1_0_lite;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance1p5_pro::plan_generate_video_artcraft_seedance1p5_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0::plan_generate_video_artcraft_seedance2p0;
+use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_seedance2p0_fast::plan_generate_video_artcraft_seedance2p0_fast;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2::plan_generate_video_artcraft_sora_2;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_sora_2_pro::plan_generate_video_artcraft_sora_2_pro;
 use crate::generate::generate_video::plan::artcraft::plan_generate_video_artcraft_veo_2::plan_generate_video_artcraft_veo_2;
@@ -44,6 +45,7 @@ use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1:
 use crate::generate::generate_video::plan::fal::plan_generate_video_fal_veo_3p1_fast::plan_generate_video_fal_veo_3p1_fast;
 use crate::generate::generate_video::plan::muapi::plan_generate_video_muapi_seedance2p0::plan_generate_video_muapi_seedance2p0;
 use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0::plan_generate_video_seedance2pro_seedance2p0;
+use crate::generate::generate_video::plan::seedance2pro::plan_generate_video_seedance2pro_seedance2p0_fast::plan_generate_video_seedance2pro_seedance2p0_fast;
 use crate::generate::generate_video::video_generation_plan::VideoGenerationPlan;
 
 /// Plan to either (1) generate a video or (2) determine how much it costs to generate that video.
@@ -131,6 +133,7 @@ impl<'a> GenerateVideoRequest<'a> {
       CommonVideoModel::Seedance10Lite => plan_generate_video_artcraft_seedance_1_0_lite(self),
       CommonVideoModel::Seedance1p5Pro => plan_generate_video_artcraft_seedance1p5_pro(self),
       CommonVideoModel::Seedance2p0 => plan_generate_video_artcraft_seedance2p0(self),
+      CommonVideoModel::Seedance2p0Fast => plan_generate_video_artcraft_seedance2p0_fast(self),
       CommonVideoModel::Sora2 => plan_generate_video_artcraft_sora_2(self),
       CommonVideoModel::Sora2Pro => plan_generate_video_artcraft_sora_2_pro(self),
       CommonVideoModel::Veo2 => plan_generate_video_artcraft_veo_2(self),
@@ -174,6 +177,7 @@ impl<'a> GenerateVideoRequest<'a> {
   fn build_seedance2pro(&self) -> Result<VideoGenerationPlan<'_>, ArtcraftRouterError> {
     match self.model {
       CommonVideoModel::Seedance2p0 => plan_generate_video_seedance2pro_seedance2p0(self),
+      CommonVideoModel::Seedance2p0Fast => plan_generate_video_seedance2pro_seedance2p0_fast(self),
       _ => Err(ArtcraftRouterError::UnsupportedModel(format!("{:?}", self.model))),
     }
   }

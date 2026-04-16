@@ -159,16 +159,13 @@ pub async fn omni_gen_video_generate_handler(
 
   let execution_provider = match request.model {
     Some(CommonVideoModel::Seedance2p0) => Provider::Seedance2Pro,
+    Some(CommonVideoModel::Seedance2p0Fast) => Provider::Seedance2Pro,
     _ => Provider::Fal,
   };
 
   // ==================== DISTILL ==================== //
 
   let distilled = distill_video_request(&request, media_file_hydration_map.as_ref(), execution_provider)?;
-
-  info!(">>> Distilled cost: {:?}", distilled.cost);
-  info!(">>> Distilled plan: {:?}", distilled.plan());
-  info!(">>> Execution provider: {:?}", distilled.execution_provider);
 
   // ==================== BILLING ==================== //
 
