@@ -1,6 +1,11 @@
-import { memo, useState } from "react";
+import { memo, useCallback, useEffect, useRef, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCube, faImage, faVideo } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faCube,
+  faImage,
+  faSpinnerThird,
+  faVideo,
+} from "@fortawesome/pro-solid-svg-icons";
 import { PLACEHOLDER_IMAGES } from "@storyteller/common";
 import {
   getModelCreatorIconPath,
@@ -51,6 +56,36 @@ function persistCache(cache: Map<string, number>) {
 
 export const aspectRatioCache = loadCache();
 
+// ── Shared visibility listener for video thumbnail retries ────────────────
+
+const visibilityCallbacks = new Set<() => void>();
+
+function onTabVisible(cb: () => void) {
+  visibilityCallbacks.add(cb);
+  if (visibilityCallbacks.size === 1) {
+    document.addEventListener("visibilitychange", fireVisibilityCallbacks);
+  }
+  return () => {
+    visibilityCallbacks.delete(cb);
+    if (visibilityCallbacks.size === 0) {
+      document.removeEventListener(
+        "visibilitychange",
+        fireVisibilityCallbacks,
+      );
+    }
+  };
+}
+
+function fireVisibilityCallbacks() {
+  if (document.hidden) return;
+  visibilityCallbacks.forEach((cb) => cb());
+}
+
+// ── Video thumbnail retry constants ───────────────────────────────────────
+
+const MAX_RETRIES = 20;
+const RETRY_INTERVAL = 5000;
+
 // ── Component ──────────────────────────────────────────────────────────────
 
 interface GalleryCardProps {
@@ -64,9 +99,52 @@ export const GalleryCard = memo(function GalleryCard({
 }: GalleryCardProps) {
   const cached = aspectRatioCache.get(item.id);
   const [ratio, setRatio] = useState<number | undefined>(cached);
+  const isVideo = item.mediaClass === "video";
 
-  // Use the capped ratio for the card's own aspect-ratio so it sizes itself
-  // correctly inside the masonry column. Image uses object-cover to fill.
+  // Video thumbnail retry — "retrying" flips to true only after the first
+  // error, so videos with ready thumbnails render the normal <img> path
+  // with zero overhead. While retrying, a hidden <img> loads via ref
+  // (no re-renders) and the spinner stays stable until success.
+  const [retrying, setRetrying] = useState(false);
+  const retryImgRef = useRef<HTMLImageElement>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const retryCountRef = useRef(0);
+
+  const kickRetry = useCallback(() => {
+    if (!retryImgRef.current || !item.thumbnail) return;
+    retryImgRef.current.src = `${item.thumbnail}?_r=${Date.now()}`;
+  }, [item.thumbnail]);
+
+  const scheduleRetry = useCallback(() => {
+    if (retryCountRef.current >= MAX_RETRIES || !item.thumbnail) return;
+    if (document.hidden) return;
+    retryTimerRef.current = setTimeout(() => {
+      retryCountRef.current++;
+      kickRetry();
+    }, RETRY_INTERVAL);
+  }, [item.thumbnail, kickRetry]);
+
+  // Subscribe to shared visibility listener for retrying video cards
+  useEffect(() => {
+    if (!isVideo || !item.thumbnail || !retrying) return;
+    const unsubscribe = onTabVisible(() => {
+      retryCountRef.current = 0;
+      kickRetry();
+    });
+    return () => {
+      unsubscribe();
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, [isVideo, item.thumbnail, retrying, kickRetry]);
+
+  // Reset retry state when thumbnail URL changes
+  useEffect(() => {
+    if (!isVideo) return;
+    setRetrying(false);
+    retryCountRef.current = 0;
+    if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+  }, [isVideo, item.thumbnail]);
+
   const displayRatio = ratio ? Math.min(ratio, MAX_RATIO) : 1;
 
   const style: React.CSSProperties = {
@@ -95,43 +173,82 @@ export const GalleryCard = memo(function GalleryCard({
         ? "3D"
         : "Image";
 
+  const handleLoad = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (isVideo && retrying) {
+        setRetrying(false);
+        retryCountRef.current = 0;
+        if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+      }
+      if (cached != null) return;
+      const img = e.currentTarget;
+      if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+        const r = img.naturalHeight / img.naturalWidth;
+        aspectRatioCache.set(item.id, r);
+        persistCache(aspectRatioCache);
+        setRatio(r);
+      }
+    },
+    [isVideo, retrying, cached, item.id],
+  );
+
+  const handleError = useCallback(
+    (e: React.SyntheticEvent<HTMLImageElement>) => {
+      if (isVideo) {
+        setRetrying(true);
+        scheduleRetry();
+      } else {
+        const target = e.currentTarget;
+        if (target.dataset.fallback) return;
+        target.dataset.fallback = "1";
+        target.src = PLACEHOLDER_IMAGES.DEFAULT;
+        target.style.opacity = "0.3";
+      }
+    },
+    [isVideo, scheduleRetry],
+  );
+
   return (
     <button
       className="group relative block w-full overflow-hidden rounded-lg bg-ui-controls/40 leading-none transition-shadow hover:ring-2 hover:ring-primary-400/60 focus:outline-none focus:ring-2 focus:ring-primary-400"
       style={style}
       onClick={() => onClick(item)}
     >
-      {item.thumbnail ? (
+      {retrying ? (
+        <>
+          <div className="flex h-full w-full flex-col items-center justify-center gap-2">
+            <FontAwesomeIcon
+              icon={faSpinnerThird}
+              className="animate-spin text-lg text-white/30"
+            />
+            <span className="text-[10px] text-white/30">
+              Loading thumbnail…
+            </span>
+          </div>
+          {/* Hidden img retries in background via ref — zero re-renders */}
+          <img
+            ref={retryImgRef}
+            src={item.thumbnail!}
+            alt=""
+            className="absolute h-0 w-0 opacity-0"
+            aria-hidden
+            onLoad={handleLoad}
+            onError={handleError}
+          />
+        </>
+      ) : item.thumbnail ? (
         <img
           src={item.thumbnail}
           alt={item.label}
           loading="lazy"
           decoding="async"
           className="block h-full w-full object-cover"
-          onLoad={(e) => {
-            if (cached != null) return;
-            const img = e.currentTarget;
-            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-              const r = img.naturalHeight / img.naturalWidth;
-              aspectRatioCache.set(item.id, r);
-              persistCache(aspectRatioCache);
-              setRatio(r);
-            }
-          }}
-          onError={(e) => {
-            const target = e.currentTarget;
-            if (target.dataset.fallback) return;
-            target.dataset.fallback = "1";
-            target.src = PLACEHOLDER_IMAGES.DEFAULT;
-            target.style.opacity = "0.3";
-          }}
+          onLoad={handleLoad}
+          onError={handleError}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center">
-          <FontAwesomeIcon
-            icon={mediaIcon}
-            className="text-xl text-white/20"
-          />
+          <FontAwesomeIcon icon={mediaIcon} className="text-xl text-white/20" />
         </div>
       )}
 

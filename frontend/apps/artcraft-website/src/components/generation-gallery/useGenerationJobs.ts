@@ -141,15 +141,19 @@ function jobToGalleryItem(job: Job): GalleryItem | null {
   if (!result?.entity_token) return null;
 
   const mediaType = getJobMediaType(job);
+  const mediaClass = mediaType === "video" ? "video" : "image";
+  const thumbnail = getMediaThumbnail(result.media_links, mediaClass, {
+    size: THUMBNAIL_SIZES.LARGE,
+  });
 
   return {
     id: result.entity_token,
     label: getPrompt(job) || "Generation",
-    thumbnail: result.media_links?.cdn_url || null,
+    thumbnail,
     fullImage: result.media_links?.cdn_url || null,
     createdAt:
       result.maybe_successfully_completed_at || job.updated_at,
-    mediaClass: mediaType === "video" ? "video" : "image",
+    mediaClass,
     modelId: job.request.maybe_model_type ?? undefined,
   };
 }
