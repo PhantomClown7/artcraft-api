@@ -1,5 +1,6 @@
 use crate::api::audio_list_ref::AudioListRef;
 use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::common_resolution::CommonResolution;
 use crate::api::image_list_ref::ImageListRef;
 use crate::api::image_ref::ImageRef;
 use crate::api::video_list_ref::VideoListRef;
@@ -24,6 +25,7 @@ pub struct PlanArtcraftSeedance2p0 {
   pub reference_audio: Option<Vec<MediaFileToken>>,
   pub reference_characters: Option<Vec<CharacterToken>>,
   pub aspect_ratio: Option<Seedance2p0AspectRatio>,
+  pub resolution: Option<CommonResolution>,
   pub duration_seconds: Option<u8>,
   pub batch_count: Seedance2p0BatchCount,
   pub idempotency_token: String,
@@ -41,6 +43,7 @@ pub fn plan_generate_video_artcraft_seedance2p0(
   let reference_audio = resolve_audio_list_ref(request.reference_audio.clone())?;
 
   let aspect_ratio = plan_aspect_ratio(request.aspect_ratio, strategy)?;
+  let resolution = plan_output_resolution(request.resolution, strategy)?;
   let batch_count = plan_batch_count(request.video_batch_count, strategy)?;
   let duration_seconds = plan_duration(request.duration_seconds, strategy)?;
 
@@ -53,6 +56,7 @@ pub fn plan_generate_video_artcraft_seedance2p0(
     reference_audio,
     reference_characters: resolve_character_list_ref(request.reference_character_tokens.clone()),
     aspect_ratio,
+    resolution,
     duration_seconds,
     batch_count,
     idempotency_token: request.get_or_generate_idempotency_token(),
@@ -224,6 +228,45 @@ fn plan_duration(
         }))
       }
       _ => Ok(Some(d.clamp(MIN, MAX) as u8)),
+    },
+  }
+}
+
+// Seedance 2.0 Pro supports output resolutions: 480p, 720p, 1080p.
+fn plan_output_resolution(
+  resolution: Option<CommonResolution>,
+  strategy: RequestMismatchMitigationStrategy,
+) -> Result<Option<CommonResolution>, ArtcraftRouterError> {
+  match resolution {
+    None => Ok(None),
+
+    // Direct mappings
+    Some(CommonResolution::FourEightyP)
+    | Some(CommonResolution::SevenTwentyP)
+    | Some(CommonResolution::TenEightyP) => Ok(resolution),
+
+    // Mismatches
+    Some(unsupported) => match strategy {
+      RequestMismatchMitigationStrategy::ErrorOut => {
+        Err(ArtcraftRouterError::Client(ClientError::ModelDoesNotSupportOption {
+          field: "resolution",
+          value: format!("{:?}", unsupported),
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayMoreUpgrade => {
+        // HalfK → 480p (up); OneK/TwoK/ThreeK/FourK → 1080p (max)
+        Ok(Some(match unsupported {
+          CommonResolution::HalfK => CommonResolution::FourEightyP,
+          _ => CommonResolution::TenEightyP,
+        }))
+      }
+      RequestMismatchMitigationStrategy::PayLessDowngrade => {
+        // HalfK → 480p (min); OneK/TwoK/ThreeK/FourK → 1080p (closest below)
+        Ok(Some(match unsupported {
+          CommonResolution::HalfK => CommonResolution::FourEightyP,
+          _ => CommonResolution::TenEightyP,
+        }))
+      }
     },
   }
 }
