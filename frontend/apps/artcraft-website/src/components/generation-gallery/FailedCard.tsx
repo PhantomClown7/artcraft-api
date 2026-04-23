@@ -42,7 +42,7 @@ export const FailedCard = memo(function FailedCard({
           Dismiss
         </button>
       </div>
-      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent px-3 pb-2.5 pt-6">
+      <div className="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-black/60 to-transparent px-3 pb-2.5 pt-6 sm:block">
         <p className="truncate text-xs text-white/70">{prompt}</p>
         <p className="truncate text-[10px] text-white/40">{modelLabel}</p>
       </div>
