@@ -212,6 +212,7 @@ const MODEL_CREATOR_ICON_MAP: Record<string, string> = {
   sora: "openai",
   veo: "google",
   grok: "grok",
+  happy_horse: "alibaba",
 };
 
 const ICON_FILES: Record<string, string> = {
@@ -222,6 +223,7 @@ const ICON_FILES: Record<string, string> = {
   kling: "kling.svg",
   google: "google.svg",
   grok: "grok.svg",
+  alibaba: "alibaba.svg",
 };
 
 export function getModelCreatorIconPath(modelId: string): string {
