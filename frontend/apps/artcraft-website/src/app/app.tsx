@@ -16,6 +16,7 @@ import FaqArticle from "../pages/faq/article";
 import NewsIndex from "../pages/news/news-index";
 import NewsPost from "../pages/news/news-post";
 import Pricing from "../pages/pricing";
+import Support from "../pages/support/support";
 import Login from "../pages/login";
 import Signup from "../pages/signup";
 import ForgotPassword, { VerifyReset } from "../pages/forgot-password";
@@ -43,6 +44,7 @@ export function App() {
         <Route path="/tutorials/:slug" element={<TutorialsArticle />} />
         <Route path="/faq" element={<FaqIndex />} />
         <Route path="/faq/:slug" element={<FaqArticle />} />
+        <Route path="/support" element={<Support />} />
         <Route path="/news" element={<NewsIndex basePath="/news" />} />
         <Route path="/news/:slug" element={<NewsPost basePath="/news" />} />
         <Route path="/library" element={<Library />} />

@@ -107,12 +107,21 @@
   @apply bg-ui-controls/85 !important;
 }
 
+/* Mobile: fully opaque, no backdrop-filter. backdrop-blur on Safari mobile
+   caused severe jank when opening the hamburger menu over constantly-updating
+   pages (create-image / create-video). Desktop keeps the full glass look. */
 .liquid-glass {
-  background: #232323c0;
+  background: #1a1a1a;
   border: 1px solid #ffffff14;
-  backdrop-filter: blur(18px) saturate(180%);
-  -webkit-backdrop-filter: blur(12px) saturate(180%);
   box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
+}
+
+@media (min-width: 1024px) {
+  .liquid-glass {
+    background: #232323c0;
+    backdrop-filter: blur(18px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+  }
 }
 
 /* Minimal thin scrollbar for prompt textareas */

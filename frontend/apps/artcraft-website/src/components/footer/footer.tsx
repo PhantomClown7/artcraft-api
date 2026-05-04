@@ -132,6 +132,9 @@ export default function Example() {
               <Link to="/press-kit" className="text-gray-400 hover:text-white">
                 Press Kit
               </Link>
+              <Link to="/support" className="text-gray-400 hover:text-white">
+                Support
+              </Link>
             </div>
             <div className="flex flex-col items-center sm:items-start gap-2">
               <div className="text-gray-200 mb-1">Tutorials</div>

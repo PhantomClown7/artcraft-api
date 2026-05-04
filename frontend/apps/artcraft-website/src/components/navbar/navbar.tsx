@@ -26,6 +26,7 @@ import {
   faCog,
   faArrowRight,
   faChevronDown,
+  faLifeRing,
 } from "@fortawesome/pro-solid-svg-icons";
 import { TaskQueue } from "./task-queue";
 import { CreditsModal } from "../credits-modal";
@@ -353,7 +354,7 @@ export default function Navbar() {
                                   }}
                                   icon={faGem}
                                 >
-                                  Support
+                                  Upgrade
                                 </Button>
                               </div>
                             </div>
@@ -368,7 +369,7 @@ export default function Navbar() {
                           onClick={() => navigate("/pricing")}
                           className="h-8 px-3 text-[13px] font-semibold rounded-lg transition-all"
                         >
-                          Support
+                          Upgrade
                         </Button>
                       )}
 
@@ -409,6 +410,23 @@ export default function Navbar() {
                                 {user.display_name || user.username}
                               </p>
                             </div>
+                            <MenuItem>
+                              {({ active }) => (
+                                <button
+                                  onClick={() => navigate("/support")}
+                                  className={twMerge(
+                                    active ? "bg-white/[0.04]" : "",
+                                    "flex w-full items-center gap-2 px-4 py-2 text-sm text-white/70 transition-colors",
+                                  )}
+                                >
+                                  <FontAwesomeIcon
+                                    icon={faLifeRing}
+                                    className="text-[11px] text-white/50"
+                                  />
+                                  Support
+                                </button>
+                              )}
+                            </MenuItem>
                             <MenuItem>
                               {({ active }) => (
                                 <button
