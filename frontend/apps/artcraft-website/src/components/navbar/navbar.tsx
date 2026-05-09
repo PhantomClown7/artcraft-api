@@ -73,6 +73,71 @@ function isEntryActive(pathname: string, entry: NavEntry): boolean {
   return isPathActive(pathname, entry.href);
 }
 
+function CreditsChip({
+  credits,
+  align,
+  onBuyCredits,
+  onUpgrade,
+}: {
+  credits: number;
+  align: "center" | "end";
+  onBuyCredits: () => void;
+  onUpgrade: () => void;
+}) {
+  return (
+    <PopoverMenu
+      position="bottom"
+      align={align}
+      triggerIcon={
+        <FontAwesomeIcon icon={faCoins} className="text-primary text-[11px]" />
+      }
+      triggerLabel={
+        <span className="whitespace-nowrap text-sm font-medium">
+          {credits.toLocaleString()}
+        </span>
+      }
+      buttonClassName="h-8 px-3 ps-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-white/80 rounded-lg gap-1.5"
+      panelClassName="mt-2 bg-[#1a1a1a] border border-white/[0.08] text-white rounded-xl"
+    >
+      {(close) => (
+        <div className="w-72 max-w-[calc(100vw-24px)] p-3 text-white">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-sm font-medium text-white/70">
+              Your credit balance
+            </span>
+            <button
+              className="text-sm font-medium text-primary hover:text-primary-300 transition-colors"
+              onClick={() => {
+                close();
+                onBuyCredits();
+              }}
+            >
+              Buy credits
+            </button>
+          </div>
+          <div className="flex items-center gap-2 text-3xl font-semibold text-white tracking-tight">
+            <FontAwesomeIcon icon={faCoins} className="text-xl text-primary" />
+            {credits.toLocaleString()}
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button
+              variant="primary"
+              className="h-9 grow"
+              onClick={() => {
+                close();
+                onUpgrade();
+              }}
+              icon={faGem}
+            >
+              Upgrade
+            </Button>
+          </div>
+        </div>
+      )}
+    </PopoverMenu>
+  );
+}
+
 async function fetchCredits(): Promise<number | null> {
   try {
     const api = new CreditsApi();
@@ -282,62 +347,12 @@ export default function Navbar() {
                       </Link>
 
                       {credits !== null && (
-                        <PopoverMenu
-                          position="bottom"
+                        <CreditsChip
+                          credits={credits}
                           align="center"
-                          triggerIcon={
-                            <FontAwesomeIcon
-                              icon={faCoins}
-                              className="text-primary text-[11px]"
-                            />
-                          }
-                          triggerLabel={
-                            <span className="whitespace-nowrap text-sm font-medium">
-                              {credits.toLocaleString()}
-                            </span>
-                          }
-                          buttonClassName="h-8 px-3 ps-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] shadow-none text-white/80 rounded-lg gap-1.5"
-                          panelClassName="mt-2 bg-[#1a1a1a] border border-white/[0.08] text-white rounded-xl"
-                        >
-                          {(close) => (
-                            <div className="w-72 p-3 text-white">
-                              <div className="mb-2 flex items-center justify-between">
-                                <span className="text-sm font-medium text-white/70">
-                                  Your credit balance
-                                </span>
-                                <button
-                                  className="text-sm font-medium text-primary hover:text-primary-300 transition-colors"
-                                  onClick={() => {
-                                    close();
-                                    setCreditsModalOpen(true);
-                                  }}
-                                >
-                                  Buy credits
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-2 text-3xl font-medium text-white tracking-tight">
-                                <FontAwesomeIcon
-                                  icon={faCoins}
-                                  className="text-xl text-primary"
-                                />
-                                {credits.toLocaleString()}
-                              </div>
-                              <div className="mt-3 flex gap-2">
-                                <Button
-                                  variant="primary"
-                                  className="h-9 grow"
-                                  onClick={() => {
-                                    close();
-                                    navigate("/pricing");
-                                  }}
-                                  icon={faGem}
-                                >
-                                  Upgrade
-                                </Button>
-                              </div>
-                            </div>
-                          )}
-                        </PopoverMenu>
+                          onBuyCredits={() => setCreditsModalOpen(true)}
+                          onUpgrade={() => navigate("/pricing")}
+                        />
                       )}
 
                       {hasPaidPlan === false && (
@@ -492,17 +507,12 @@ export default function Navbar() {
                   {/* Mobile: credits + task queue + hamburger */}
                   <div className="flex items-center gap-1.5 lg:hidden">
                     {user && credits !== null && (
-                      <button
-                        type="button"
-                        onClick={() => setCreditsModalOpen(true)}
-                        className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] text-white/80 text-[12px] font-medium transition-colors"
-                      >
-                        <FontAwesomeIcon
-                          icon={faCoins}
-                          className="text-primary text-[10px]"
-                        />
-                        {credits.toLocaleString()}
-                      </button>
+                      <CreditsChip
+                        credits={credits}
+                        align="end"
+                        onBuyCredits={() => setCreditsModalOpen(true)}
+                        onUpgrade={() => navigate("/pricing")}
+                      />
                     )}
                     {user && <TaskQueue />}
                     <DisclosureButton className="flex h-8 w-8 items-center justify-center rounded-lg text-white/70 hover:text-white hover:bg-white/[0.06] transition-colors">
