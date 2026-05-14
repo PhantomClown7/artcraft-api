@@ -638,6 +638,22 @@ export default function Navbar() {
                         </div>
                       );
                     })}
+                    {user?.maybe_feature_flags?.includes(
+                      USER_FEATURE_FLAGS.REFERRALS,
+                    ) && (
+                      <DisclosureButton
+                        as={Link}
+                        to="/referrals"
+                        className={twMerge(
+                          "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                          isPathActive(location.pathname, "/referrals")
+                            ? "bg-white/[0.08] text-white"
+                            : "text-white/60 active:bg-white/[0.04]",
+                        )}
+                      >
+                        Referrals
+                      </DisclosureButton>
+                    )}
                   </div>
 
                   <div className="my-3 border-t border-white/[0.06]" />
@@ -678,21 +694,6 @@ export default function Navbar() {
                           />
                           Settings
                         </DisclosureButton>
-                        {user.maybe_feature_flags?.includes(
-                          USER_FEATURE_FLAGS.REFERRALS,
-                        ) && (
-                          <DisclosureButton
-                            as={Link}
-                            to="/referrals"
-                            className="flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-[12px] font-medium text-white/70 bg-white/[0.06] active:bg-white/10 transition-colors"
-                          >
-                            <FontAwesomeIcon
-                              icon={faGift}
-                              className="text-[10px]"
-                            />
-                            Referrals
-                          </DisclosureButton>
-                        )}
                         <DisclosureButton
                           as="a"
                           href={SOCIAL_LINKS.DISCORD}
