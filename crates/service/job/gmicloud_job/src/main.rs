@@ -28,11 +28,14 @@ use shared_env_var_config::mysql::env_get_mysql_connection_string_or_default;
 use crate::http_server::run_http_server::{launch_http_server, CreateServerArgs};
 use crate::main_loop::main_loop;
 use crate::job_dependencies::JobDependencies;
+use crate::startup::build_pager::build_pager;
 
+pub mod alert_on_error;
 pub mod http_server;
 pub mod job_dependencies;
 pub mod main_loop;
 pub mod process_job;
+pub mod startup;
 
 // Bucket config
 const ENV_ACCESS_KEY: &str = "ACCESS_KEY";
@@ -99,14 +102,30 @@ async fn main() -> AnyhowResult<()> {
   let gmicloud_api_key_str = easyenv::get_env_string_required(ENV_GMICLOUD_API_KEY)?;
   let gmicloud_api_key = GmiCloudApiKey::new(gmicloud_api_key_str);
 
-  // How often to poll for results (default: 15 seconds)
-  let poll_interval_millis: u64 = easyenv::get_env_num(
-    "GMICLOUD_POLL_INTERVAL_MILLIS",
+  // How often to poll after a successful iteration (default: 3 seconds)
+  let poll_interval_success_millis: u64 = easyenv::get_env_num(
+    "GMICLOUD_POLL_INTERVAL_SUCCESS_MILLIS",
+    3_000,
+  )?;
+
+  // How often to poll after a failed iteration (default: 15 seconds)
+  let poll_interval_failure_millis: u64 = easyenv::get_env_num(
+    "GMICLOUD_POLL_INTERVAL_FAILURE_MILLIS",
     15_000,
   )?;
 
   let application_shutdown = RelaxedAtomicBool::new(false);
   let job_stats = JobStats::new();
+
+  // Pager setup
+  let (pager, pager_worker) = build_pager(server_environment, &container_environment.hostname);
+
+  info!("Spawning pager worker.");
+
+  std::thread::spawn(move || {
+    let rt = tokio::runtime::Runtime::new().expect("pager worker tokio runtime");
+    rt.block_on(pager_worker.run());
+  });
 
   let create_server_args = CreateServerArgs {
     container_environment: container_environment.clone(),
@@ -118,8 +137,10 @@ async fn main() -> AnyhowResult<()> {
     public_bucket_client,
     gmicloud_api_key,
     server_environment,
+    pager,
     job_stats,
-    poll_interval_millis,
+    poll_interval_success_millis,
+    poll_interval_failure_millis,
     application_shutdown: application_shutdown.clone(),
   };
 
