@@ -27,6 +27,7 @@ pub struct RunPipelineV2Args<'a> {
   pub user_token: &'a UserToken,
   pub media_file_to_url_map: &'a Option<HashMap<MediaFileToken, String>>,
   pub kinovi_character_id_map: &'a Option<HashMap<CharacterToken, String>>,
+  pub use_alternate_kinovi: bool,
 }
 
 pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResult, AdvancedCommonWebError> {
@@ -37,7 +38,20 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     user_token,
     media_file_to_url_map,
     kinovi_character_id_map,
+    use_alternate_kinovi,
   } = args;
+
+  let mut router_builder = router_builder.clone();
+
+  match router_builder.model {
+    CommonVideoModel::PreviewModel => {
+      router_builder.model = CommonVideoModel::Seedance2p0;
+    },
+    CommonVideoModel::PreviewModelFast => {
+      router_builder.model = CommonVideoModel::Seedance2p0Fast;
+    },
+    _ => {}, // Fall-through
+  }
 
   let provider = match router_builder.model {
     CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
@@ -97,6 +111,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
     server_state,
     media_file_to_url_map.as_ref(),
     kinovi_character_id_map.as_ref(),
+    use_alternate_kinovi,
   ).await;
 
   // 5. On failure, refund wallet for Kinovi requests.
@@ -129,10 +144,11 @@ async fn upload_and_generate(
   server_state: &ServerState,
   media_file_urls_by_token: Option<&HashMap<MediaFileToken, String>>,
   kinovi_character_ids: Option<&HashMap<CharacterToken, String>>,
+  use_alternate_kinovi: bool,
 ) -> Result<GenerateVideoResponse, AdvancedCommonWebError> {
 
   let provider = draft_or_request.get_provider();
-  let client = build_router_client(provider, server_state)?;
+  let client = build_router_client(provider, server_state, use_alternate_kinovi)?;
 
   let video_request = match draft_or_request {
     VideoGenerationDraftOrRequest::Request(request) => request,

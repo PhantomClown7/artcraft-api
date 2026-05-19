@@ -189,6 +189,14 @@ pub async fn omni_gen_video_generate_handler(
     Some(CommonVideoModel::Seedance2p0Fast) => true,
     Some(CommonVideoModel::Seedance2p0Global) => true,
     Some(CommonVideoModel::Seedance2p0FastGlobal) => true,
+    Some(CommonVideoModel::PreviewModel) => true,
+    Some(CommonVideoModel::PreviewModelFast) => true,
+    _ => false,
+  };
+
+  let use_alternate_kinovi = match request.model {
+    Some(CommonVideoModel::PreviewModel) => true,
+    Some(CommonVideoModel::PreviewModelFast) => true,
     _ => false,
   };
 
@@ -201,6 +209,7 @@ pub async fn omni_gen_video_generate_handler(
       user_token,
       media_file_to_url_map: &media_file_to_url_map,
       kinovi_character_id_map: &kinovi_character_id_map,
+      use_alternate_kinovi,
     }).await?
   } else {
     info!("Using pipeline v1");
@@ -336,6 +345,7 @@ pub async fn omni_gen_video_generate_handler(
         primary_order_id: &payload.order_id,
         maybe_additional_order_ids: payload.maybe_order_ids.as_deref(),
         maybe_wallet_ledger_entry_token: pipeline_result.billing.maybe_wallet_ledger_entry_token.as_ref(),
+        use_alternate_kinovi,
         shared: SharedJobArgs {
           apriori_job_token: &pipeline_result.billing.apriori_job_token,
           idempotency_token: &idempotency_token,
