@@ -67,7 +67,7 @@ pub async fn insert_generic_inference_job_for_beeble_queue_with_apriori_job_toke
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let inner_args = InsertGenericInferenceJobForProviderArgs {
+  let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {
     apriori_job_token: args.apriori_job_token,
     uuid_idempotency_token: args.uuid_idempotency_token,
     job_type: InferenceJobType::BeebleQueue,
@@ -89,9 +89,7 @@ pub async fn insert_generic_inference_job_for_beeble_queue_with_apriori_job_toke
     status: args.starting_job_status_override.unwrap_or(JobStatusPlus::Pending),
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
-  };
-
-  let record_id = insert_generic_inference_job_for_provider(inner_args).await?;
+  }).await?;
 
   info!("Insert generic inference job for Beeble queue: {} with record ID {}", args.apriori_job_token, record_id);
 

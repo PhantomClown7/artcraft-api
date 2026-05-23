@@ -55,7 +55,7 @@ pub async fn insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_t
 ) -> Result<InferenceJobToken, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let inner_args = InsertGenericInferenceJobForProviderArgs {
+  let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {
     apriori_job_token: args.apriori_job_token,
     uuid_idempotency_token: args.uuid_idempotency_token,
     job_type: InferenceJobType::WorldlabsQueue,
@@ -71,16 +71,13 @@ pub async fn insert_generic_inference_job_for_worldlabs_queue_with_apriori_job_t
     maybe_avt_token: args.maybe_avt_token,
     creator_ip_address: args.creator_ip_address,
     creator_set_visibility: args.creator_set_visibility,
-    // The original Worldlabs query never set this column — preserved (default NULL).
     maybe_debug_log_event_token: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
     status: JobStatusPlus::Pending,
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
-  };
-
-  let record_id = insert_generic_inference_job_for_provider(inner_args).await?;
+  }).await?;
 
   info!("Insert generic inference job for World Labs queue: {} with record ID {}", args.apriori_job_token, record_id);
 

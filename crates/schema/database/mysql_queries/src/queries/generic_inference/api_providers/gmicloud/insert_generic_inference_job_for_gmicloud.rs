@@ -44,7 +44,7 @@ pub async fn insert_generic_inference_job_for_gmicloud<'e, 'c: 'e, E>(
 where
   E: 'e + Executor<'c, Database = MySql>,
 {
-  let inner_args = InsertGenericInferenceJobForProviderArgs {
+  let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {
     apriori_job_token: args.apriori_job_token,
     uuid_idempotency_token: args.uuid_idempotency_token,
     job_type: InferenceJobType::GmiCloudQueue,
@@ -55,7 +55,6 @@ where
     maybe_model_type: args.maybe_model_type,
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: None,
-    // GmiCloud doesn't take inference args.
     maybe_inference_args: None,
     maybe_creator_user_token: args.maybe_creator_user_token,
     maybe_avt_token: args.maybe_avt_token,
@@ -67,9 +66,7 @@ where
     status: JobStatusPlus::Pending,
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
-  };
-
-  let record_id = insert_generic_inference_job_for_provider(inner_args).await?;
+  }).await?;
 
   info!(
     "Insert generic inference job for GmiCloud: {} with record ID {}",

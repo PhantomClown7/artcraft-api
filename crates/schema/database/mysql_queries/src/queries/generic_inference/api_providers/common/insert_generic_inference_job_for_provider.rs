@@ -88,7 +88,7 @@ pub(crate) async fn insert_generic_inference_job_for_provider<'e, 'c: 'e, E>(
 ) -> Result<u64, DatabaseQueryError>
   where E: 'e + Executor<'c, Database = MySql>
 {
-  let inner_args = InsertFullGenericInferenceJobRecordArgs {
+  insert_full_generic_inference_job_record(InsertFullGenericInferenceJobRecordArgs {
     token: args.apriori_job_token,
     uuid_idempotency_token: args.uuid_idempotency_token,
 
@@ -103,19 +103,6 @@ pub(crate) async fn insert_generic_inference_job_for_provider<'e, 'c: 'e, E>(
     // Convert from the canonical CommonModelType to the table-scoped
     // InferenceModelType so the database column gets the right value.
     maybe_model_type: args.maybe_model_type.map(InferenceModelType::from_common_model_type),
-
-    // Web-only fields — providers never set these.
-    maybe_model_token: None,
-    maybe_input_source_token: None,
-    maybe_input_source_token_type: None,
-    maybe_download_url: None,
-    maybe_cover_image_media_file_token: None,
-    maybe_raw_inference_text: None,
-    maybe_routing_tag: None,
-    priority_level: 0,
-    requires_keepalive: false,
-    max_duration_seconds: 0,
-    is_debug_request: false,
 
     maybe_prompt_token: args.maybe_prompt_token,
     maybe_wallet_ledger_entry_token: args.maybe_wallet_ledger_entry_token,
@@ -136,7 +123,19 @@ pub(crate) async fn insert_generic_inference_job_for_provider<'e, 'c: 'e, E>(
 
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
-  };
 
-  insert_full_generic_inference_job_record(inner_args).await
+    // Web-only fields — providers never set these.
+    maybe_model_token: None,
+    maybe_input_source_token: None,
+    maybe_input_source_token_type: None,
+    maybe_download_url: None,
+    maybe_cover_image_media_file_token: None,
+    maybe_raw_inference_text: None,
+    maybe_routing_tag: None,
+    priority_level: 0,
+    requires_keepalive: false,
+    max_duration_seconds: 0,
+    is_debug_request: false,
+
+  }).await
 }

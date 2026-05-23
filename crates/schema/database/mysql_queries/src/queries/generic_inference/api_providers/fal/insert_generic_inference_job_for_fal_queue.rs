@@ -54,7 +54,7 @@ pub async fn insert_generic_inference_job_for_fal_queue<'e, 'c : 'e, E>(args: In
 {
   let job_token = InferenceJobToken::generate();
 
-  let args = InsertGenericInferenceForFalWithAprioriJobTokenArgs {
+  insert_generic_inference_job_for_fal_queue_with_apriori_job_token(InsertGenericInferenceForFalWithAprioriJobTokenArgs {
     uuid_idempotency_token: args.uuid_idempotency_token,
     apriori_job_token: &job_token,
     maybe_external_third_party_id: args.maybe_external_third_party_id,
@@ -69,10 +69,8 @@ pub async fn insert_generic_inference_job_for_fal_queue<'e, 'c : 'e, E>(args: In
     starting_job_status_override: None,
     maybe_frontend_failure_category: None,
     maybe_failure_reason: None,
-      maybe_debug_log_event_token: None,
+    maybe_debug_log_event_token: None,
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
-  };
-
-  insert_generic_inference_job_for_fal_queue_with_apriori_job_token(args).await
+  }).await
 }

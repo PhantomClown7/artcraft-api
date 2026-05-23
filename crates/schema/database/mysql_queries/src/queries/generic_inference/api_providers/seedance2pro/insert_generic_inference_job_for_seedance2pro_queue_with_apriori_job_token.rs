@@ -76,7 +76,7 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     )
   };
 
-  let inner_args = InsertGenericInferenceJobForProviderArgs {
+  let record_id = insert_generic_inference_job_for_provider(InsertGenericInferenceJobForProviderArgs {
     apriori_job_token: args.apriori_job_token,
     uuid_idempotency_token: args.uuid_idempotency_token,
     job_type,
@@ -98,9 +98,7 @@ pub async fn insert_generic_inference_job_for_seedance2pro_queue_with_apriori_jo
     status: JobStatusPlus::Pending,
     mysql_executor: args.mysql_executor,
     phantom: args.phantom,
-  };
-
-  let record_id = insert_generic_inference_job_for_provider(inner_args).await?;
+  }).await?;
 
   info!("Insert generic inference job for Seedance 2 Pro queue: {} with record ID {}", args.apriori_job_token, record_id);
 
