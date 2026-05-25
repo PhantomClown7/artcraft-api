@@ -117,10 +117,16 @@ const VerifyReset = () => {
       />
 
       <main className="relative z-10 flex-1 flex items-center justify-center p-4">
-        <div className="w-full max-w-md bg-[#1C1C20] border border-white/10 rounded-2xl p-6 py-8 shadow-2xl">
+        <div className="w-full max-w-md bg-[#1C1C20] border border-white/[4%] rounded-2xl p-6 py-8 shadow-2xl">
           {!success ? (
             <>
               <div className="text-center mb-8">
+                <img
+                  src="/images/artcraft-icon.png"
+                  alt="ArtCraft"
+                  className="mx-auto mb-6 h-12 w-auto select-none pointer-events-none"
+                  draggable={false}
+                />
                 <h1 className="text-2xl font-semibold mb-2">
                   Password Reset Verification
                 </h1>
@@ -154,7 +160,7 @@ const VerifyReset = () => {
                     onChange={(e) => setVerificationCode(e.target.value)}
                     placeholder="Enter verification code"
                     isError={!!fieldErrors.verificationCode}
-                    inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+                    inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
                   />
                   {fieldErrors.verificationCode && (
                     <p className="text-red-400 text-xs ml-1">
@@ -176,7 +182,7 @@ const VerifyReset = () => {
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Enter new password"
                       isError={!!fieldErrors.newPassword}
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                      inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"
@@ -208,7 +214,7 @@ const VerifyReset = () => {
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Enter new password again"
                       isError={!!fieldErrors.confirmPassword}
-                      inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+                      inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
                     />
                     <button
                       type="button"

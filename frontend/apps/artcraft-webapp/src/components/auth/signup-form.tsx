@@ -7,6 +7,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { Button } from "@storyteller/ui-button";
 import { Input } from "@storyteller/ui-input";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { UsersApi } from "@storyteller/api";
 import {
   getLandingUrl,
@@ -14,6 +15,8 @@ import {
   getReferralUsername,
   getReferrer,
 } from "@storyteller/common";
+import { refreshSession, useSessionStore } from "../../lib/session";
+import { GoogleLoginButton } from "./GoogleLoginButton";
 
 interface SignupFormProps {
   onSuccess: (isNewUser?: boolean) => void;
@@ -28,6 +31,7 @@ export const SignupForm = ({
   className = "",
   autoFocus = false,
 }: SignupFormProps) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -81,36 +85,24 @@ export const SignupForm = ({
     }
   };
 
-  //const handleGoogleSuccess = (isNewUser: boolean) => {
-  //  onSuccess(isNewUser);
-  //};
+  const handleGoogleSuccess = async () => {
+    // Refresh so the session reflects the new cookie (and whether the account
+    // still needs a password), then route accordingly. New SSO users with no
+    // password go set one; everyone else goes home.
+    await refreshSession(true);
+    if (useSessionStore.getState().passwordNotSet) {
+      navigate("/set-password");
+    } else {
+      navigate("/");
+    }
+  };
 
-  //const handleGoogleError = (errorMessage: string) => {
-  //  setError(errorMessage);
-  //};
+  const handleGoogleError = (message: string) => {
+    setError(message);
+  };
 
   return (
     <div className={`space-y-4 ${className}`}>
-      {/* {showGoogleButton && (
-        <>
-          <GoogleLoginButton
-            mode="signup"
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-          />
-
-          <div className="relative flex items-center justify-center py-2">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/10"></div>
-            </div>
-            <span className="relative bg-[#1C1C20] px-4 text-xs text-white/40 uppercase tracking-widest">
-              or
-            </span>
-          </div>
-        </>
-      )}
-      */}
-
       <form
         className="space-y-4"
         onSubmit={(e) => {
@@ -134,21 +126,23 @@ export const SignupForm = ({
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
             autoFocus={autoFocus}
-            inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
+            inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-xs font-semibold text-white/70 ml-1">
-            Password
-          </label>
+          <div className="flex justify-between items-center ml-1">
+            <label className="text-xs font-semibold text-white/70">
+              Password
+            </label>
+          </div>
           <div className="relative">
             <Input
               type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Min. 8 characters"
-              inputClassName="w-full bg-black/20 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
+              inputClassName="w-full bg-black/40 border border-white/10 focus:border-primary/50 rounded-xl px-4 py-3 text-white placeholder-white/20 outline-none transition-colors pr-12"
             />
             <button
               type="button"
@@ -170,11 +164,26 @@ export const SignupForm = ({
             {isLoading ? (
               <FontAwesomeIcon icon={faSpinnerThird} className="animate-spin" />
             ) : (
-              "Create Account"
+              "Create account"
             )}
           </Button>
         </div>
       </form>
+
+      <div className="relative flex items-center justify-center py-2">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-white/10" />
+        </div>
+        <span className="relative bg-[#1C1C20] px-4 text-xs uppercase tracking-widest text-white/40">
+          or
+        </span>
+      </div>
+
+      <GoogleLoginButton
+        mode="signup"
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+      />
     </div>
   );
 };
