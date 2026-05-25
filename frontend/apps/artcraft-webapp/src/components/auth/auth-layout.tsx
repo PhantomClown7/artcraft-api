@@ -1,10 +1,11 @@
 import { ReactNode } from "react";
-import { Outlet, useNavigate } from "react-router-dom";
-import { faArrowLeft } from "@fortawesome/pro-solid-svg-icons";
+import { Outlet, useNavigate, Navigate } from "react-router-dom";
+import { faArrowLeft, faSpinnerThird } from "@fortawesome/pro-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { TruchetPattern } from "@storyteller/ui-vfx";
 import { AuthShowcase } from "./auth-showcase";
 import { useMediaQuery } from "../ui/use-media-query";
+import { useSession } from "../../lib/session";
 
 /**
  * Persistent shell for the auth pages. Rendered as a layout route so the
@@ -18,10 +19,16 @@ export const AuthLayout = () => {
   // mobile never downloads the demo videos.
   const showShowcase = useMediaQuery("(min-width: 1024px)");
   const navigate = useNavigate();
+  const { loggedIn, authChecked } = useSession();
 
   const handleBack = () => {
     navigate("/");
   };
+
+  // Already signed in? Never show the auth form — go straight home.
+  if (loggedIn) {
+    return <Navigate to="/" replace />;
+  }
 
   return (
     <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-[#101014] p-4 text-white">
@@ -66,7 +73,16 @@ export const AuthLayout = () => {
 
           <div className="flex flex-1 flex-col justify-center px-8 py-10 sm:px-10">
             <div className="mx-auto w-full max-w-sm">
-              <Outlet />
+              {authChecked ? (
+                <Outlet />
+              ) : (
+                <div className="flex justify-center py-12">
+                  <FontAwesomeIcon
+                    icon={faSpinnerThird}
+                    className="animate-spin text-2xl text-white/40"
+                  />
+                </div>
+              )}
             </div>
           </div>
 
