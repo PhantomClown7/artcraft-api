@@ -622,9 +622,7 @@ const Landing3 = () => {
                 playsInline
                 controls
                 preload="auto"
-                onVolumeChange={(e) =>
-                  setHeroVideoMuted(e.currentTarget.muted)
-                }
+                onVolumeChange={(e) => setHeroVideoMuted(e.currentTarget.muted)}
               />
               {heroVideoMuted && (
                 <button
@@ -634,11 +632,14 @@ const Landing3 = () => {
                     if (!v) return;
                     v.muted = false;
                     setHeroVideoMuted(false);
-                    void v.play().catch(() => { });
+                    void v.play().catch(() => {});
                   }}
                   className="absolute top-4 left-1/2 -translate-x-1/2 inline-flex items-center gap-2 h-9 px-4 rounded-full bg-black/65 hover:bg-black/80 backdrop-blur-md text-white text-[12px] font-semibold border border-white/15 transition-colors"
                 >
-                  <FontAwesomeIcon icon={faVolumeXmark} className="text-[12px]" />
+                  <FontAwesomeIcon
+                    icon={faVolumeXmark}
+                    className="text-[12px]"
+                  />
                   Tap to unmute
                 </button>
               )}
@@ -766,8 +767,9 @@ const Landing3 = () => {
               className="grid grid-cols-1 lg:grid-cols-12 gap-0 rounded-2xl sm:rounded-[28px] overflow-hidden bg-[#080808] transition-colors"
             >
               <div
-                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${i % 2 === 1 ? "lg:order-2" : ""
-                  }`}
+                className={`lg:col-span-5 p-7 sm:p-10 lg:p-12 flex flex-col justify-center ${
+                  i % 2 === 1 ? "lg:order-2" : ""
+                }`}
               >
                 <div className="flex items-center gap-2 mb-5">
                   <span className="inline-flex h-7 px-2.5 items-center gap-1.5 rounded-full bg-primary/15 text-primary text-[12px] font-semibold border border-primary/20">
@@ -786,8 +788,9 @@ const Landing3 = () => {
                 </p>
               </div>
               <div
-                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${i % 2 === 1 ? "lg:order-1" : ""
-                  }`}
+                className={`lg:col-span-7 relative bg-[#080808] aspect-[12/10] lg:self-center ${
+                  i % 2 === 1 ? "lg:order-1" : ""
+                }`}
               >
                 <LazyAutoplayVideo
                   src={feature.src}
@@ -1201,7 +1204,7 @@ const Landing3 = () => {
                 their vision to life. Free to download.
               </p>
 
-              <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3 font-display">
+              <div className="flex flex-col sm:flex-row flex-wrap items-center justify-center gap-3">
                 {isMobile ? (
                   <button
                     disabled
