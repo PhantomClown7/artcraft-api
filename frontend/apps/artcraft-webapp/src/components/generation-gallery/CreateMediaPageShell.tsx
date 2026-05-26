@@ -61,33 +61,35 @@ export function CreateMediaPageShell({
     <div className="flex h-full w-full bg-[#101014] text-white">
       <Seo title={title} description={description} />
 
-      {/* Glow orbs — only show on empty state, hide when gallery has content */}
-      {!hasContent &&
-        (glowOrbs ?? (
-          <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
-            <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
-            <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
-            <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
-          </div>
-        ))}
-
-      {/* Subtle truchet pattern, only on the empty state so it never sits
-          behind the gallery grid. Masked to a soft center vignette. */}
+      {/* Decorative background, empty state only. Hidden on mobile: the glow
+          orbs use filter: blur(120px) and the truchet uses mask-image, both of
+          which are full-screen GPU layers that iOS Safari must re-rasterize
+          when an overlay (mobile menu, modal) composites over them, causing
+          multi-second hangs. (This is distinct from backdrop-filter.) */}
       {!hasContent && (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed inset-0 z-0"
-          style={{
-            maskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
-            WebkitMaskImage:
-              "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
-          }}
-        >
-          <TruchetPattern
-            intensity={0.5}
-            className="absolute inset-0 h-full w-full"
-          />
+        <div className="hidden sm:block">
+          {glowOrbs ?? (
+            <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
+              <div className="absolute left-1/2 top-[-10%] h-[700px] w-[700px] -translate-x-1/2 rounded-full bg-gradient-to-br from-blue-700 via-blue-500 to-[#00AABA] opacity-[0.12] blur-[120px] transform-gpu" />
+              <div className="absolute bottom-[-15%] right-[-10%] h-[500px] w-[500px] rounded-full bg-gradient-to-br from-purple-600 via-blue-500 to-[#00AABA] opacity-[0.08] blur-[120px] transform-gpu" />
+              <div className="absolute bottom-[20%] left-[-10%] h-[400px] w-[400px] rounded-full bg-gradient-to-br from-blue-600 to-pink-500 opacity-[0.06] blur-[140px] transform-gpu" />
+            </div>
+          )}
+          <div
+            aria-hidden
+            className="pointer-events-none fixed inset-0 z-0"
+            style={{
+              maskImage:
+                "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+              WebkitMaskImage:
+                "radial-gradient(ellipse 70% 60% at 50% 50%, black 20%, transparent 80%)",
+            }}
+          >
+            <TruchetPattern
+              intensity={0.5}
+              className="absolute inset-0 h-full w-full"
+            />
+          </div>
         </div>
       )}
 
