@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faWaveformLines } from "@fortawesome/pro-solid-svg-icons";
+import {
+  faClock,
+  faSparkles,
+  faWaveformLines,
+} from "@fortawesome/pro-solid-svg-icons";
 import { CharactersApi, FilterMediaClasses } from "@storyteller/api";
 import type { OmniGenVideoModelInfo } from "@storyteller/api";
-import { ToggleButton } from "@storyteller/ui-button";
+import { Button, ToggleButton } from "@storyteller/ui-button";
 import { PopoverMenu, type PopoverItem } from "@storyteller/ui-popover";
 import { SliderV2 } from "@storyteller/ui-sliderv2";
 import { Tooltip } from "@storyteller/ui-tooltip";
@@ -45,6 +49,7 @@ import {
   getModelCreatorIconPath,
 } from "../../lib/omni-gen-hooks";
 import { useSignupCta } from "../../components/signup-cta-modal";
+import { useInsufficientCredits } from "../../components/insufficient-credits-modal";
 
 // ── Constants ────────────────────────────────────────────────────────────
 
@@ -206,6 +211,7 @@ function resolveDurationForModel(
 export default function CreateVideo() {
   const { user, authChecked } = useAuthCheck();
   const { loggedIn, openSignupCta } = useSignupCta();
+  const openInsufficientCredits = useInsufficientCredits();
   const { promptBoxRef, promptHeight } = usePromptHeight();
 
   // Fetch models from API
@@ -323,6 +329,7 @@ export default function CreateVideo() {
   const setBatchJobToken = useCreateVideoStore((s) => s.setBatchJobToken);
   const completeBatch = useCreateVideoStore((s) => s.completeBatch);
   const failBatch = useCreateVideoStore((s) => s.failBatch);
+  const dismissBatch = useCreateVideoStore((s) => s.dismissBatch);
   const pollingCleanupsRef = useRef<Map<string, () => void>>(new Map());
 
   // Derived model capabilities
@@ -879,7 +886,14 @@ export default function CreateVideo() {
 
       if (!result.success || !result.jobToken) {
         console.warn("[generate-video] enqueue failed", result.error);
-        failBatch(batchId, result.error ?? "Failed to start generation");
+        // 402 Payment Required: the user is out of credits. Drop the pending
+        // card and surface the upgrade modal instead of a failed-card error.
+        if (result.errorCode === 402) {
+          dismissBatch(batchId);
+          openInsufficientCredits();
+        } else {
+          failBatch(batchId, result.error ?? "Failed to start generation");
+        }
       } else {
         setBatchJobToken(batchId, result.jobToken);
         console.log("[generate-video] polling started", {
@@ -919,6 +933,7 @@ export default function CreateVideo() {
   }, [
     loggedIn,
     openSignupCta,
+    openInsufficientCredits,
     prompt,
     needsImage,
     isReferenceMode,
@@ -941,6 +956,7 @@ export default function CreateVideo() {
     setBatchJobToken,
     completeBatch,
     failBatch,
+    dismissBatch,
   ]);
 
   // ── Render ────────────────────────────────────────────────────────────
@@ -959,8 +975,20 @@ export default function CreateVideo() {
       description="Generate stunning AI videos with ArtCraft"
       authChecked={authChecked}
       hasContent={hasContent}
-      emptyStateTitle="Generate Video"
-      emptyStateSubtitle="Add a prompt, then generate"
+      emptyStateTitle="Create Video"
+      emptyStateSubtitle="Describe a scene. See it in motion."
+      emptyStateCta={
+        loggedIn ? undefined : (
+          <Button
+            variant="primary"
+            onClick={openSignupCta}
+            icon={faSparkles}
+            className="h-12 px-6 text-base font-semibold rounded-full"
+          >
+            Sign up to create
+          </Button>
+        )
+      }
       bottomOffset={promptHeight + 24}
       modelItems={modelItems}
       onModelChange={handleModelChange}
