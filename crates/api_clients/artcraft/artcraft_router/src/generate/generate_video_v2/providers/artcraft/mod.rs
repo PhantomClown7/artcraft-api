@@ -12,6 +12,8 @@ pub mod preview_model;
 pub mod preview_model_fast;
 pub(crate) mod request_common;
 pub(crate) mod resolve;
+pub mod seedance_1p0_lite;
+pub mod seedance_1p5_pro;
 pub mod seedance_2p0;
 pub mod seedance_2p0_fast;
 pub mod seedance_2p0_u_fast;
@@ -26,11 +28,3 @@ pub mod veo_3_fast;
 pub mod veo_3p1;
 pub mod veo_3p1_fast;
 
-#[cfg(test)]
-mod kling_cost_parity_tests;
-
-#[cfg(test)]
-mod veo_cost_parity_tests;
-
-#[cfg(test)]
-mod sora_cost_parity_tests;
