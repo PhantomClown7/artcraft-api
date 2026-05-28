@@ -46,10 +46,10 @@ impl FalVeo3FastRequestState {
 mod tests {
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
-  use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -61,7 +61,7 @@ mod tests {
     let r = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("the dog leaps into the lake.".to_string()),
       start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
-      resolution: Some(CommonResolution::SevenTwentyP),
+      resolution: Some(RouterResolution::SevenTwentyP),
       duration_seconds: Some(4),
       generate_audio: Some(true),
       ..builder()
@@ -71,8 +71,8 @@ mod tests {
 
   fn builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3Fast,
-      provider: Provider::Fal,
+      model: RouterVideoModel::Veo3Fast,
+      provider: RouterProvider::Fal,
       ..Default::default()
     }
   }

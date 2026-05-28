@@ -52,14 +52,14 @@ impl FalKling2p6ProCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, generate_audio: Option<bool>) -> u64 {
     let b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling2p6Pro,
-      provider: Provider::Fal,
+      model: RouterVideoModel::Kling2p6Pro,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,
       generate_audio,

@@ -66,15 +66,15 @@ fn flf_duration_seconds(d: Option<EnqueueVeo3p1FastFirstLastFrameImageToVideoDur
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>, generate_audio: Option<bool>, frames: u8) -> u64 {
     let mut b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Veo3p1Fast,
-      provider: Provider::Fal,
+      model: RouterVideoModel::Veo3p1Fast,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       duration_seconds,
       generate_audio,

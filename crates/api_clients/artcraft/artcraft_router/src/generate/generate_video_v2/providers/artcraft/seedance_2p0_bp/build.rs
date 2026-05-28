@@ -28,10 +28,10 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_resolution::CommonResolution;
+  use crate::api::router_resolution::RouterResolution;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
   use crate::generate::generate_video_v2::video_generation_request::VideoGenerationRequest;
@@ -77,19 +77,19 @@ mod tests {
 
     #[test]
     fn res_480p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourEightyP));
     }
 
     #[test]
     fn res_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::SevenTwentyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::TenEightyP));
     }
 
@@ -142,7 +142,7 @@ mod tests {
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      provider: Provider::Artcraft,
+      provider: RouterProvider::Artcraft,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
       ..Default::default()

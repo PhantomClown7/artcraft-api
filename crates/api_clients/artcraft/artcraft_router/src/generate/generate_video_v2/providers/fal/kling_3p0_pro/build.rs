@@ -7,7 +7,7 @@ use fal_client::requests::webhook::video::text::enqueue_kling_3p0_pro_text_to_vi
   EnqueueKling3p0ProTextToVideoRequest,
 };
 
-use crate::api::common_aspect_ratio::CommonAspectRatio;
+use crate::api::router_aspect_ratio::RouterAspectRatio;
 use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use crate::errors::artcraft_router_error::ArtcraftRouterError;
 use crate::errors::client_error::ClientError;
@@ -86,20 +86,20 @@ fn build_kling_3p0_pro_state(
 }
 
 pub(crate) fn plan_aspect_ratio(
-  aspect_ratio: Option<CommonAspectRatio>,
+  aspect_ratio: Option<RouterAspectRatio>,
   strategy: RequestMismatchMitigationStrategy,
 ) -> Result<Option<PlanAspectRatio>, ArtcraftRouterError> {
   use PlanAspectRatio as Ar;
   match aspect_ratio {
     None => Ok(None),
 
-    Some(CommonAspectRatio::Square) | Some(CommonAspectRatio::SquareHd) => Ok(Some(Ar::Square)),
-    Some(CommonAspectRatio::WideSixteenByNine) | Some(CommonAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
-    Some(CommonAspectRatio::TallNineBySixteen) | Some(CommonAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => Ok(Some(Ar::Square)),
+    Some(RouterAspectRatio::WideSixteenByNine) | Some(RouterAspectRatio::Wide) => Ok(Some(Ar::SixteenByNine)),
+    Some(RouterAspectRatio::TallNineBySixteen) | Some(RouterAspectRatio::Tall) => Ok(Some(Ar::NineBySixteen)),
 
-    Some(CommonAspectRatio::Auto)
-    | Some(CommonAspectRatio::Auto2k)
-    | Some(CommonAspectRatio::Auto4k) => Ok(Some(Ar::SixteenByNine)),
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto4k) => Ok(Some(Ar::SixteenByNine)),
 
     Some(other) => match strategy {
       RequestMismatchMitigationStrategy::ErrorOut => {
@@ -188,17 +188,17 @@ fn to_i2v_aspect_ratio(a: PlanAspectRatio) -> EnqueueKling3p0ProImageToVideoAspe
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 
   use super::*;
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling3p0Pro,
-      provider: Provider::Fal,
+      model: RouterVideoModel::Kling3p0Pro,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       ..Default::default()
     }

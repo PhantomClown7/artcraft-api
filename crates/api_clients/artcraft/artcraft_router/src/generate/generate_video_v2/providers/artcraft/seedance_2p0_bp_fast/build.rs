@@ -28,11 +28,11 @@ mod tests {
   use tokens::tokens::media_files::MediaFileToken;
 
   use crate::api::character_list_ref::CharacterListRef;
-  use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_list_ref::ImageListRef;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -79,28 +79,28 @@ mod tests {
 
     #[test]
     fn res_480p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::FourEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::FourEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::FourEightyP));
     }
 
     #[test]
     fn res_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::SevenTwentyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::SevenTwentyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p_downgrades_to_720p() {
-      let req = unwrap_request(make_builder(|b| { b.resolution = Some(CommonResolution::TenEightyP); }));
+      let req = unwrap_request(make_builder(|b| { b.resolution = Some(RouterResolution::TenEightyP); }));
       assert_eq!(req.request.resolution, Some(CommonResolutionEnum::SevenTwentyP));
     }
 
     #[test]
     fn res_1080p_error_out() {
       let result = build_artcraft_seedance_2p0_bp_fast(GenerateVideoRequestBuilder {
-        model: CommonVideoModel::Seedance2p0BytePlusFast,
-        provider: Provider::Artcraft,
-        resolution: Some(CommonResolution::TenEightyP),
+        model: RouterVideoModel::Seedance2p0BytePlusFast,
+        provider: RouterProvider::Artcraft,
+        resolution: Some(RouterResolution::TenEightyP),
         request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::ErrorOut,
         ..Default::default()
       });
@@ -129,8 +129,8 @@ mod tests {
     #[test]
     fn url_start_frame_rejected() {
       let result = build_artcraft_seedance_2p0_bp_fast(GenerateVideoRequestBuilder {
-        model: CommonVideoModel::Seedance2p0BytePlusFast,
-        provider: Provider::Artcraft,
+        model: RouterVideoModel::Seedance2p0BytePlusFast,
+        provider: RouterProvider::Artcraft,
         start_frame: Some(ImageRef::Url("https://example.com".to_string())),
         ..Default::default()
       });
@@ -158,8 +158,8 @@ mod tests {
 
   fn make_builder(f: impl FnOnce(&mut GenerateVideoRequestBuilder)) -> GenerateVideoRequestBuilder {
     let mut builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance2p0BytePlusFast,
-      provider: Provider::Artcraft,
+      model: RouterVideoModel::Seedance2p0BytePlusFast,
+      provider: RouterProvider::Artcraft,
       duration_seconds: Some(5),
       video_batch_count: Some(1),
       ..Default::default()

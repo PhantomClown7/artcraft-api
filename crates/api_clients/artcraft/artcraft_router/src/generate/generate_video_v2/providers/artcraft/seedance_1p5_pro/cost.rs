@@ -78,14 +78,14 @@ fn common_resolution_to_seedance(r: CommonResolutionEnum) -> Option<EnqueueSeeda
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>) -> u64 {
     let b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
-      provider: Provider::Artcraft,
+      model: RouterVideoModel::Seedance1p5Pro,
+      provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
       duration_seconds,
       ..Default::default()

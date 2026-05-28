@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use log::{error, info, warn};
 use sqlx::pool::PoolConnection;
-use artcraft_router::api::common_video_model::CommonVideoModel;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_video_model::RouterVideoModel;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 use artcraft_router::generate::generate_video::generate_video_response::GenerateVideoResponse;
 use artcraft_router::generate::generate_video_v2::video_generation_draft_context::VideoGenerationDraftContext;
@@ -44,25 +44,25 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   let mut router_builder = router_builder.clone();
 
   match router_builder.model {
-    CommonVideoModel::PreviewModel |
-    CommonVideoModel::Seedance2p0BytePlus => {
-      router_builder.model = CommonVideoModel::Seedance2p0;
+    RouterVideoModel::PreviewModel |
+    RouterVideoModel::Seedance2p0BytePlus => {
+      router_builder.model = RouterVideoModel::Seedance2p0;
     },
-    CommonVideoModel::PreviewModelFast |
-    CommonVideoModel::Seedance2p0BytePlusFast => {
-      router_builder.model = CommonVideoModel::Seedance2p0Fast;
+    RouterVideoModel::PreviewModelFast |
+    RouterVideoModel::Seedance2p0BytePlusFast => {
+      router_builder.model = RouterVideoModel::Seedance2p0Fast;
     },
     _ => {}, // Fall-through
   }
 
   let provider = match router_builder.model {
-    CommonVideoModel::HappyHorse1p0 => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0 => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0Fast => Provider::Seedance2Pro,
-    CommonVideoModel::Seedance2p0Ultra => Provider::GmiCloud,
-    CommonVideoModel::Seedance2p0UltraFast => Provider::GmiCloud,
-    CommonVideoModel::GrokImagineVideo => Provider::GrokApi,
-    _ => Provider::Fal,
+    RouterVideoModel::HappyHorse1p0 => RouterProvider::Seedance2Pro,
+    RouterVideoModel::Seedance2p0 => RouterProvider::Seedance2Pro,
+    RouterVideoModel::Seedance2p0Fast => RouterProvider::Seedance2Pro,
+    RouterVideoModel::Seedance2p0Ultra => RouterProvider::GmiCloud,
+    RouterVideoModel::Seedance2p0UltraFast => RouterProvider::GmiCloud,
+    RouterVideoModel::GrokImagineVideo => RouterProvider::GrokApi,
+    _ => RouterProvider::Fal,
   };
 
   // 1. Build execution request
@@ -71,7 +71,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   // Fal, GmiCloud, and Grok (xAI) take image URLs directly, not media file tokens.
   // Resolve tokens to URLs before building.
-  if matches!(provider, Provider::Fal | Provider::GmiCloud | Provider::GrokApi) {
+  if matches!(provider, RouterProvider::Fal | RouterProvider::GmiCloud | RouterProvider::GrokApi) {
     resolve_media_tokens_to_urls(&mut exec_builder, media_file_to_url_map.as_ref());
   }
 
@@ -86,7 +86,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
   //    For GmiCloud, use the execution request's cost directly (no Artcraft equivalent).
   let cost = {
     let mut cost_builder = router_builder.clone();
-    cost_builder.provider = Provider::Artcraft;
+    cost_builder.provider = RouterProvider::Artcraft;
 
     cost_builder.build2()
       .map_err(|e| {
@@ -119,7 +119,7 @@ pub async fn run_pipeline_v2(args: RunPipelineV2Args<'_>) -> Result<PipelineResu
 
   // 5. On failure, refund wallet for Kinovi requests.
   if let Err(ref err) = result {
-    if matches!(provider, Provider::Seedance2Pro) {
+    if matches!(provider, RouterProvider::Seedance2Pro) {
       if let Some(ledger_entry_token) = billing.maybe_wallet_ledger_entry_token.as_ref() {
         warn!("Kinovi v2 generation failed, issuing refund for {}: {:?}", ledger_entry_token.as_str(), err);
 

@@ -121,16 +121,16 @@ fn to_i2v_aspect_ratio(a: PlanAspectRatio) -> EnqueueKling3p0StandardImageToVide
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
 
   use super::*;
 
   fn base_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling3p0Standard,
-      provider: Provider::Fal,
+      model: RouterVideoModel::Kling3p0Standard,
+      provider: RouterProvider::Fal,
       prompt: Some("test".to_string()),
       ..Default::default()
     }

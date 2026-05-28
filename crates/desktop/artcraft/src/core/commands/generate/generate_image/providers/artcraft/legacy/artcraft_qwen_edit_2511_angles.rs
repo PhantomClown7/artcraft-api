@@ -1,9 +1,9 @@
 use log::{error, info};
 
 use artcraft_client::credentials::storyteller_credential_set::StorytellerCredentialSet;
-use artcraft_router::api::common_image_model::CommonImageModel;
+use artcraft_router::api::router_image_model::RouterImageModel;
 use artcraft_router::api::image_list_ref::ImageListRef;
-use artcraft_router::api::provider::Provider;
+use artcraft_router::api::router_provider::RouterProvider;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_artcraft_client::RouterArtcraftClient;
 use artcraft_router::client::router_client::RouterClient;
@@ -34,8 +34,8 @@ pub async fn handle_qwen_edit_2511_angles(
   let image_inputs = build_image_inputs(request, semantic_media_files);
 
   let router_request = GenerateImageRequestBuilder {
-    model: CommonImageModel::QwenEdit2511Angles,
-    provider: Provider::Artcraft,
+    model: RouterImageModel::QwenEdit2511Angles,
+    provider: RouterProvider::Artcraft,
     prompt: request.prompt.clone(),
     image_inputs,
     resolution: None,

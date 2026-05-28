@@ -29,14 +29,14 @@ impl ArtcraftKling2p5TurboProCostState {
 
 #[cfg(test)]
 mod tests {
-  use crate::api::common_video_model::CommonVideoModel;
-  use crate::api::provider::Provider;
+  use crate::api::router_video_model::RouterVideoModel;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
 
   fn cost_cents(duration_seconds: Option<u16>) -> u64 {
     let b = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Kling2p5TurboPro,
-      provider: Provider::Artcraft,
+      model: RouterVideoModel::Kling2p5TurboPro,
+      provider: RouterProvider::Artcraft,
       prompt: Some("test".to_string()),
       duration_seconds,
       ..Default::default()

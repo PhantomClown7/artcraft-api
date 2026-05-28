@@ -69,11 +69,11 @@ impl FalSeedance1p5ProRequestState {
 mod tests {
   use test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL;
 
-  use crate::api::common_aspect_ratio::CommonAspectRatio;
-  use crate::api::common_resolution::CommonResolution;
-  use crate::api::common_video_model::CommonVideoModel;
+  use crate::api::router_aspect_ratio::RouterAspectRatio;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::router_video_model::RouterVideoModel;
   use crate::api::image_ref::ImageRef;
-  use crate::api::provider::Provider;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video::generate_video_response::GenerateVideoResponse;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -86,8 +86,8 @@ mod tests {
   async fn live_text_to_video_720p_5s() {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("a serene mountain landscape at sunrise.".to_string()),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      resolution: Some(CommonResolution::SevenTwentyP),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
+      resolution: Some(RouterResolution::SevenTwentyP),
       duration_seconds: Some(5),
       generate_audio: Some(true),
       ..fal_seedance_1p5_pro_builder()
@@ -101,7 +101,7 @@ mod tests {
   async fn live_text_to_video_1080p_no_audio() {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("a city street bustling with people".to_string()),
-      resolution: Some(CommonResolution::TenEightyP),
+      resolution: Some(RouterResolution::TenEightyP),
       duration_seconds: Some(5),
       generate_audio: Some(false),
       ..fal_seedance_1p5_pro_builder()
@@ -116,8 +116,8 @@ mod tests {
     let response = run_pipeline(GenerateVideoRequestBuilder {
       prompt: Some("the dog leaps into the lake and splashes around.".to_string()),
       start_frame: Some(ImageRef::Url(JUNO_AT_LAKE_IMAGE_URL.to_string())),
-      aspect_ratio: Some(CommonAspectRatio::WideSixteenByNine),
-      resolution: Some(CommonResolution::SevenTwentyP),
+      aspect_ratio: Some(RouterAspectRatio::WideSixteenByNine),
+      resolution: Some(RouterResolution::SevenTwentyP),
       duration_seconds: Some(5),
       ..fal_seedance_1p5_pro_builder()
     }).await;
@@ -141,8 +141,8 @@ mod tests {
 
   fn fal_seedance_1p5_pro_builder() -> GenerateVideoRequestBuilder {
     GenerateVideoRequestBuilder {
-      model: CommonVideoModel::Seedance1p5Pro,
-      provider: Provider::Fal,
+      model: RouterVideoModel::Seedance1p5Pro,
+      provider: RouterProvider::Fal,
       video_batch_count: Some(1),
       ..Default::default()
     }

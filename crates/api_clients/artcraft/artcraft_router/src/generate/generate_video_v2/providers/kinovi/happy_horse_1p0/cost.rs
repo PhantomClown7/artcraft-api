@@ -60,8 +60,8 @@ impl KinoviHappyHorse1p0CostState {
 #[cfg(test)]
 mod tests {
   use super::*;
-  use crate::api::common_resolution::CommonResolution;
-  use crate::api::provider::Provider;
+  use crate::api::router_resolution::RouterResolution;
+  use crate::api::router_provider::RouterProvider;
   use crate::generate::generate_video::generate_video_request_builder::GenerateVideoRequestBuilder;
   use crate::generate::generate_video_v2::video_generation_draft::VideoGenerationDraftRequest;
   use crate::generate::generate_video_v2::video_generation_draft_or_request::VideoGenerationDraftOrRequest;
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn from_draft_1080p_batch_4() {
-      let draft = make_draft(5, 4, Some(CommonResolution::TenEightyP));
+      let draft = make_draft(5, 4, Some(RouterResolution::TenEightyP));
       let cost = KinoviHappyHorse1p0CostState::from_draft(&draft);
       assert_eq!(cost.estimate_cost().cost_in_credits, Some(330 * 4));
     }
@@ -248,7 +248,7 @@ mod tests {
 
     #[test]
     fn draft_and_request_produce_same_cost() {
-      let draft = make_draft(5, 1, Some(CommonResolution::SevenTwentyP));
+      let draft = make_draft(5, 1, Some(RouterResolution::SevenTwentyP));
       let req = make_request_state(
         Some(KinoviHappyHorse1p0OutputResolution::SevenTwentyP), 5, None,
       );
@@ -260,7 +260,7 @@ mod tests {
 
     #[test]
     fn draft_and_request_produce_same_cost_1080p_batch_2() {
-      let draft = make_draft(10, 2, Some(CommonResolution::TenEightyP));
+      let draft = make_draft(10, 2, Some(RouterResolution::TenEightyP));
       let req = make_request_state(
         Some(KinoviHappyHorse1p0OutputResolution::TenEightyP), 10,
         Some(KinoviHappyHorse1p0BatchCount::Two),
@@ -306,12 +306,12 @@ mod tests {
   fn make_draft(
     duration_seconds: u16,
     video_batch_count: u16,
-    resolution: Option<CommonResolution>,
+    resolution: Option<RouterResolution>,
   ) -> KinoviHappyHorse1p0DraftState {
-    use crate::api::common_video_model::CommonVideoModel;
+    use crate::api::router_video_model::RouterVideoModel;
     let builder = GenerateVideoRequestBuilder {
-      model: CommonVideoModel::HappyHorse1p0,
-      provider: Provider::Seedance2Pro,
+      model: RouterVideoModel::HappyHorse1p0,
+      provider: RouterProvider::Seedance2Pro,
       resolution,
       duration_seconds: Some(duration_seconds),
       video_batch_count: Some(video_batch_count),
