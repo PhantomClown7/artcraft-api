@@ -206,7 +206,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     video_references_supported: Some(true),
     video_references_max: Some(3),
     video_references_max_total_duration_seconds: Some(15),
-    character_references_supported: Some(true),
+    character_references_supported: Some(false), // TODO
     character_references_max: Some(9),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::WideTwentyOneByNine,
@@ -246,7 +246,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     video_references_supported: Some(true),
     video_references_max: Some(3),
     video_references_max_total_duration_seconds: Some(15),
-    character_references_supported: Some(true),
+    character_references_supported: Some(false), // TODO
     character_references_max: Some(9),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::WideTwentyOneByNine,
@@ -285,7 +285,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     video_references_supported: Some(true),
     video_references_max: Some(3),
     video_references_max_total_duration_seconds: Some(15),
-    character_references_supported: Some(true),
+    character_references_supported: Some(false), // TODO
     character_references_max: Some(9),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::WideTwentyOneByNine,
@@ -325,7 +325,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     video_references_supported: Some(true),
     video_references_max: Some(3),
     video_references_max_total_duration_seconds: Some(15),
-    character_references_supported: Some(true),
+    character_references_supported: Some(false), // TODO
     character_references_max: Some(9),
     aspect_ratio_options: Some(vec![
       CommonAspectRatio::WideTwentyOneByNine,
