@@ -243,7 +243,7 @@ function InfoHint({ content }: { content: ReactNode }) {
               transform: "translate(-50%, -100%)",
               zIndex: 10000,
             }}
-            className="pointer-events-auto rounded-lg border border-white/10 bg-ui-controls p-3 text-xs leading-relaxed text-base-fg shadow-xl"
+            className="pointer-events-auto rounded-lg border border-white/10 bg-ui-controls px-3 py-1.5 text-center text-xs leading-relaxed text-base-fg shadow-xl"
             onClick={(e) => e.stopPropagation()}
             onMouseEnter={() => {
               if (hoverTimerRef.current) clearTimeout(hoverTimerRef.current);
