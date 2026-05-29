@@ -71,6 +71,14 @@ pub struct OmniGenVideoModelDetails {
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub full_name: Option<String>,
+
+  /// Additional details about the model.
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub extra_info: Option<String>,
+
+  /// Additional details about the model. (Brief; only a few words.)
+  #[serde(skip_serializing_if = "Option::is_none")]
+  pub extra_info_short: Option<String>,
   
   #[serde(skip_serializing_if = "Option::is_none")]
   pub text_prompt_supported: Option<bool>,
