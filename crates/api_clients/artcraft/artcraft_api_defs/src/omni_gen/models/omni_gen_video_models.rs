@@ -191,6 +191,8 @@ impl Default for OmniGenVideoModelDetails {
       model: DEFAULT_VIDEO_MODEL,
       model_creator: None,
       full_name: None,
+      extra_info: None,
+      extra_info_short: None,
       text_prompt_supported: None,
       text_prompt_max_length: None,
       negative_text_prompt_supported: None,
