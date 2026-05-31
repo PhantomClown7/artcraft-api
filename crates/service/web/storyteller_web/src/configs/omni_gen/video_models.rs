@@ -63,6 +63,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     extra_info_short: Some("Fast and high quality".to_string()),
     text_to_video_supported: Some(false), // NB: This might be temporary
     text_prompt_supported: Some(true),
+    text_prompt_max_length: Some(4096),
     starting_keyframe_supported: Some(true),
     ending_keyframe_supported: Some(false),
     image_references_supported: Some(false),
