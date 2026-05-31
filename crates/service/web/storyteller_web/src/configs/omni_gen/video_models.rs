@@ -32,6 +32,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     //video_references_max: Some(3),
     //video_references_max_total_duration_seconds: Some(15),
     aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
       CommonAspectRatio::WideSixteenByNine,
       CommonAspectRatio::WideFourByThree,
       CommonAspectRatio::WideThreeByTwo,
@@ -72,6 +73,7 @@ fn build_omni_gen_video_models() -> Vec<OmniGenVideoModelDetails> {
     //video_references_max: Some(3),
     //video_references_max_total_duration_seconds: Some(15),
     aspect_ratio_options: Some(vec![
+      CommonAspectRatio::Auto,
       CommonAspectRatio::WideSixteenByNine,
       CommonAspectRatio::WideFourByThree,
       CommonAspectRatio::WideThreeByTwo,
