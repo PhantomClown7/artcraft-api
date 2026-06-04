@@ -71,6 +71,19 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
                 .route(web::head().to(|| HttpResponse::Ok()))
             )
         )
+        .service(
+          web::scope("/user_emails")
+              .service(
+                web::resource("/change")
+                    .route(web::post().to(moderator_change_user_email_handler))
+                    .route(web::head().to(|| HttpResponse::Ok()))
+              )
+              .service(
+                web::resource("/list/{username}")
+                    .route(web::get().to(moderator_list_email_address_changes_for_user_handler))
+                    .route(web::head().to(|| HttpResponse::Ok()))
+              )
+        )
         .service(web::resource("/user_feature_flags/list")
             .route(web::get().to(moderator_list_all_available_user_feature_flags_handler))
             .route(web::head().to(|| HttpResponse::Ok()))
@@ -215,19 +228,6 @@ pub fn add_moderator_routes<T, B> (app: App<T>) -> App<T>
               .service(
                 web::resource("/manage_ban")
                     .route(web::post().to(moderation_ban_user_handler))
-                    .route(web::head().to(|| HttpResponse::Ok()))
-              )
-        )
-        .service(
-          web::scope("/user_emails")
-              .service(
-                web::resource("/change")
-                    .route(web::post().to(moderator_change_user_email_handler))
-                    .route(web::head().to(|| HttpResponse::Ok()))
-              )
-              .service(
-                web::resource("/list/{username}")
-                    .route(web::get().to(moderator_list_email_address_changes_for_user_handler))
                     .route(web::head().to(|| HttpResponse::Ok()))
               )
         )
