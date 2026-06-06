@@ -32,6 +32,8 @@ export function SettingsDrawer({
       <SheetContent
         side="bottom"
         aria-describedby={undefined}
+        modal={modal}
+        open={open}
         className="ac-drawer-content max-h-[80vh] rounded-t-2xl bg-ui-panel pb-[max(1rem,env(safe-area-inset-bottom))]"
       >
         <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-white/20" />
