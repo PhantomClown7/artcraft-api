@@ -209,17 +209,21 @@ function resolveDurationForModel(
   if (current == null) return model.duration_seconds_default ?? null;
   const max = maxDurationForMode(model, isReferenceMode);
   if (model.duration_seconds_min != null && max != null) {
-    if (current >= model.duration_seconds_min && current <= max) {
-      return current;
-    }
-    return Math.min(
-      model.duration_seconds_default ?? model.duration_seconds_min,
-      max,
-    );
+    // Clamp the user's chosen seconds into this model's range rather than
+    // resetting to the default — switching from a 15s model to a 10s-max model
+    // should land on 10s (closest available), not jump down to the minimum.
+    return Math.min(Math.max(current, model.duration_seconds_min), max);
   }
   if (model.duration_seconds_options?.length) {
-    if (model.duration_seconds_options.includes(current)) return current;
-    return model.duration_seconds_default ?? model.duration_seconds_options[0]!;
+    const options = model.duration_seconds_options;
+    if (options.includes(current)) return current;
+    // Snap to the nearest supported option (ties → longer) instead of the
+    // default, so e.g. 15s on a 5s/10s model resolves to 10s, not 5s.
+    return options.reduce((best, o) => {
+      const dBest = Math.abs(best - current);
+      const dO = Math.abs(o - current);
+      return dO < dBest || (dO === dBest && o > best) ? o : best;
+    }, options[0]!);
   }
   return model.duration_seconds_default ?? null;
 }
@@ -553,11 +557,17 @@ export default function CreateVideo() {
   }, [effectiveDuration]);
   const handleDurationSlide = useCallback(
     (v: number) => {
-      setLocalDuration(v);
+      // Snap to a model-valid duration so the thumb and the chip never disagree
+      // (no-op for continuous-range models; snaps to the nearest option for
+      // models with sparse second options like 5s / 10s).
+      const snapped = selectedModel
+        ? (resolveDurationForModel(selectedModel, v, isReferenceMode) ?? v)
+        : v;
+      setLocalDuration(snapped);
       clearTimeout(durationTimerRef.current);
-      durationTimerRef.current = setTimeout(() => setDuration(v), 300);
+      durationTimerRef.current = setTimeout(() => setDuration(snapped), 300);
     },
-    [setDuration],
+    [setDuration, selectedModel, isReferenceMode],
   );
   const resolutionItems = useMemo(
     (): PopoverItem[] | null =>
