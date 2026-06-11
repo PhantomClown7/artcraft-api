@@ -36,7 +36,6 @@
     --input: 0 0% 18%;
     --ring: 217 91% 60%;
   }
-
 }
 
 * {
@@ -124,9 +123,11 @@
 /* Gradient panel surface used by pagescene + lib components. */
 .bg-ui-panel-gradient {
   background:
-    radial-gradient(60.68% 60.68% at 50% 0%,
+    radial-gradient(
+      60.68% 60.68% at 50% 0%,
       rgba(255, 255, 255, 0.08) 0%,
-      rgba(0, 0, 0, 0) 70%),
+      rgba(0, 0, 0, 0) 70%
+    ),
     #1f1f1f;
   background-color: #1f1f1f;
 }
@@ -201,8 +202,8 @@
 
 @layer components {
   .glass {
-    @apply relative border border-white/10 shadow-lg backdrop-blur-xl transition-colors duration-300;
-    @apply bg-ui-controls/85 !important;
+    @apply relative border border-white/10 shadow-lg backdrop-blur-3xl transition-colors duration-300;
+    @apply bg-ui-controls/50 !important;
   }
 }
 

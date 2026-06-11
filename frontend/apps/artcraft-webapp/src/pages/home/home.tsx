@@ -82,7 +82,7 @@ export function Home() {
         What will you <span className="text-primary">craft</span> today?
       </h1>
 
-      <section className="mt-12">
+      <section className="py-12">
         <h2 className="text-sm font-semibold text-white/85 mb-4">Create</h2>
         <div className="grid gap-3 auto-rows-fr sm:grid-cols-2 lg:grid-cols-3">
           {APPS.map((app) => (
