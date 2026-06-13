@@ -17,7 +17,7 @@ use mysql_queries::queries::users::user::get::lookup_user_for_moderation::{
 use tokens::tokens::users::UserToken;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_moderator::{require_moderator, UseDatabase};
+use crate::http_server::web_utils::user_session::require_moderator::require_moderator;
 use crate::state::server_state::ServerState;
 
 const LEGACY_USER_TOKEN_PREFIX: &str = "U:";
@@ -40,7 +40,7 @@ pub async fn moderator_user_lookup_handler(
   server_state: web::Data<Arc<ServerState>>,
 ) -> Result<Json<ModeratorUserLookupSuccessResponse>, CommonWebError> {
 
-  let _user_session = require_moderator(&http_request, &server_state, UseDatabase::GrabNewConnection)
+  let _user_session = require_moderator(&http_request, &server_state, &server_state.mysql_pool)
     .await
     .map_err(|_| CommonWebError::NotAuthorized)?;
 

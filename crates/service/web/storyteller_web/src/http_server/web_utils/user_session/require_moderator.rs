@@ -3,8 +3,7 @@ use std::fmt::{Display, Formatter};
 
 use actix_web::HttpRequest;
 use log::warn;
-use sqlx::pool::PoolConnection;
-use sqlx::MySql;
+use sqlx::{Executor, MySql};
 
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
@@ -27,40 +26,19 @@ impl Display for RequireModeratorError {
 
 impl Error for RequireModeratorError {}
 
-pub enum UseDatabase<'a> {
-  GrabNewConnection,
-  FromPool(&'a mut PoolConnection<MySql>),
-}
-
-pub async fn require_moderator(
+/// `mysql_executor` can be any sqlx executor — pass `&server_state.mysql_pool` to grab a
+/// fresh connection, or an in-flight connection/transaction (`&mut *connection`) to reuse
+/// one the handler already holds.
+pub async fn require_moderator<'e, 'c : 'e, E>(
   http_request: &HttpRequest,
   server_state: &ServerState,
-  database: UseDatabase<'_>,
-) -> Result<SessionUserRecord, RequireModeratorError> {
-  // NB: Save a reference to a connection we open in a branch until the function ends.
-  let mut saved_connection = None;
-
-  let mysql_connection = match database {
-    UseDatabase::GrabNewConnection => {
-      let mut connection = server_state.mysql_pool
-          .acquire()
-          .await
-          .map_err(|err| {
-            warn!("MySql pool error: {:?}", err);
-            RequireModeratorError::ServerError
-          })?;
-
-      saved_connection = Some(connection);
-
-      // NB: We just saved it, so it shouldn't error. Safer than unwrap/expect.
-      saved_connection.as_mut().ok_or(RequireModeratorError::ServerError)?
-    },
-    UseDatabase::FromPool(pool) => pool,
-  };
-
+  mysql_executor: E,
+) -> Result<SessionUserRecord, RequireModeratorError>
+  where E: 'e + Executor<'c, Database = MySql>
+{
   let maybe_user_session = server_state
       .session_checker
-      .maybe_get_user_session_from_connection(&http_request, mysql_connection)
+      .maybe_get_user_session_from_executor(http_request, mysql_executor)
       .await
       .map_err(|e| {
         warn!("Session checker error: {:?}", e);
