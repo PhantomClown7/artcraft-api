@@ -17,7 +17,7 @@ use tokens::tokens::beta_keys::BetaKeyToken;
 use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
-use crate::http_server::web_utils::user_session::require_user_session::{require_user_session, RequireUserSessionError};
+use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Copy, Clone, Deserialize, ToSchema)]
@@ -108,12 +108,8 @@ pub async fn list_beta_keys_handler(
   query: Query<ListBetaKeysQueryParams>,
   server_state: web::Data<Arc<ServerState>>
 ) -> Result<HttpResponse, CommonWebError> {
-  let user_session = require_user_session(&http_request, &server_state)
-      .await
-      .map_err(|err| match err {
-        RequireUserSessionError::ServerError => CommonWebError::from_error(err),
-        RequireUserSessionError::NotAuthorized => CommonWebError::NotAuthorized,
-      })?;
+  let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
+      .await?;
 
   let mut is_mod = user_session.can_ban_users;
 

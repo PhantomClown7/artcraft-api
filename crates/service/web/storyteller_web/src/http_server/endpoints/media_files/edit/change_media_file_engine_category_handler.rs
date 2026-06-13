@@ -53,12 +53,8 @@ pub async fn change_media_file_engine_category_handler(
     server_state: web::Data<Arc<ServerState>>
 ) -> Result<Json<SimpleResponse>, CommonWebError> {
 
-    let user_session = require_user_session(&http_request, &server_state)
-        .await
-        .map_err(|e| {
-            warn!("Not authorized: {:?}", e);
-            CommonWebError::NotAuthorized
-        })?;
+    let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
+        .await?;
 
     let media_file_token = path.token.clone();
     let is_mod = user_session.is_mod();

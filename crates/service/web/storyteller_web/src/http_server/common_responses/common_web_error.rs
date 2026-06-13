@@ -2,7 +2,7 @@ use std::fmt::{Display, Formatter};
 use std::sync::Arc;
 
 use crate::http_server::session::session_checker_error::SessionCheckerError;
-use crate::http_server::web_utils::user_session::require_user_session::RequireUserSessionError;
+use crate::http_server::web_utils::user_session::require_user_session_extended_using_connection::RequireUserSessionError;
 use actix_artcraft::sessions::anonymous_visitor_tracking::avt_cookie_payload_error::AvtCookiePayloadError;
 use actix_artcraft::sessions::user_sessions::http_user_session_payload_error::HttpUserSessionPayloadError;
 use actix_http::StatusCode;
@@ -19,7 +19,7 @@ use serde::Serialize;
 /// ```ignore
 /// pub async fn my_handler(...) -> Result<Json<MyResponse>, CommonWebError> {
 ///   // sqlx errors, anyhow errors, session errors — all convert via ?
-///   let user = require_user_session_using_connection(&req, ...)?;
+///   let user = require_user_session(&req, ...)?;
 ///   let data = some_db_query(&pool).await?;
 ///
 ///   if data.is_none() {
