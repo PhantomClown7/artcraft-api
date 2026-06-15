@@ -63,7 +63,9 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
       // The list includes soft-deleted keys; only show live ones.
       const live = fetched.filter((k) => k.maybe_deleted_at === null);
       setKeys((prev) => (reset ? live : [...prev, ...live]));
-      setFetchedCount((prev) => (reset ? fetched.length : prev + fetched.length));
+      setFetchedCount((prev) =>
+        reset ? fetched.length : prev + fetched.length,
+      );
       setHasMore(fetched.length === PAGE_SIZE);
     } else {
       toast.error(response.errorMessage ?? "Could not load API keys.");
@@ -98,8 +100,8 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-start justify-between gap-3">
+    <div className="flex flex-col gap-3">
+      <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex flex-col gap-0.5">
           <p className="text-sm font-medium">API keys</p>
           <p className="text-xs opacity-70">
@@ -132,8 +134,6 @@ export function ApiKeySection(_props: ApiKeySectionProps) {
           onCancel={() => setCreating(false)}
         />
       )}
-
-      <hr className="border-ui-panel-border" />
 
       {loading ? (
         <div className="py-6 text-center text-xs opacity-60">
@@ -299,19 +299,20 @@ function NewKeyReveal({
         </code>
         <Button
           type="button"
-          variant="secondary"
-          className="h-9 px-3 shrink-0"
+          variant="primary"
+          className="h-8 px-3 shrink-0"
           onClick={handleCopy}
         >
-          <FontAwesomeIcon icon={copied ? faCheck : faCopy} className="mr-1.5" />
+          <FontAwesomeIcon
+            icon={copied ? faCheck : faCopy}
+            className="mr-1.5"
+          />
           {copied ? "Copied" : "Copy"}
         </Button>
-      </div>
-      <div className="flex justify-end pt-0.5">
         <Button
           type="button"
           variant="secondary"
-          className="h-8 px-3"
+          className="h-8 px-3 shrink-0"
           onClick={onDismiss}
         >
           Done
@@ -339,7 +340,7 @@ function ApiKeyRow({
   onRequestDelete: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-ui-panel-border p-3">
+    <div className="flex flex-col gap-2 rounded-lg border border-white/10 bg-white/[0.03] p-3 transition-colors hover:border-white/[0.14]">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="truncate text-sm font-medium">{item.name}</p>
@@ -349,9 +350,10 @@ function ApiKeyRow({
             </p>
           )}
           <div className="flex items-center gap-2 pt-1">
-            {/* Truncated, display-only — the full secret is only shown on create. */}
-            <code className="min-w-0 truncate rounded bg-black/30 px-2 py-1 font-mono text-[11px] text-white/70">
-              {item.truncated_api_key}
+            {/* Truncated prefix, display-only — the full secret is only shown on
+                create. The trailing ellipsis signals it's not the whole value. */}
+            <code className="min-w-0 truncate rounded bg-black/40 px-2 py-1 font-mono text-[11px] text-white/70">
+              {item.truncated_api_key}…
             </code>
             <span className="text-[10px] uppercase tracking-wider text-white/40">
               {formatDate(item.created_at)}
@@ -365,6 +367,7 @@ function ApiKeyRow({
               variant="secondary"
               className="h-8 px-3"
               onClick={onOpenEdit}
+              title="Edit description"
             >
               Edit
             </Button>
@@ -438,6 +441,9 @@ function EditDescriptionForm({
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-2 pt-1">
+      <p className="text-xs opacity-70">
+        Edit the description for "{item.name}". The key's name can't be changed.
+      </p>
       <Input
         type="text"
         value={value}

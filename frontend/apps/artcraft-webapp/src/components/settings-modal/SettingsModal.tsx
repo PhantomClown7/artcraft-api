@@ -37,7 +37,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   );
 
   const tabs = useMemo(
-    () => (hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
+    () => (!hasApiKeyFlag ? [...BASE_TABS, API_KEYS_TAB] : BASE_TABS),
     [hasApiKeyFlag],
   );
 
@@ -167,7 +167,7 @@ function ApiKeysPanel() {
   }
 
   return (
-    <div className="pt-3">
+    <div className="pb-4 pt-3">
       <ApiKeySection user={user} />
     </div>
   );
