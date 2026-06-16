@@ -713,6 +713,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "artcraft_api_keys"
+version = "0.0.1"
+dependencies = [
+ "workspace-build-acceleration",
+]
+
+[[package]]
 name = "artcraft_client"
 version = "0.0.1"
 dependencies = [
@@ -7297,6 +7304,7 @@ name = "mysql_queries"
 version = "0.0.1"
 dependencies = [
  "anyhow",
+ "artcraft_api_keys",
  "bucket_paths",
  "chrono",
  "composite_identifiers",
@@ -11556,6 +11564,7 @@ dependencies = [
  "actix_helpers",
  "anyhow",
  "artcraft_api_defs",
+ "artcraft_api_keys",
  "artcraft_router",
  "async-stripe 0.26.0",
  "async-trait",

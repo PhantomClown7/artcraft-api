@@ -86,6 +86,8 @@ pub async fn create_api_key_handler(
   Ok(Json(CreateApiKeySuccessResponse {
     success: true,
     api_key_token: token,
-    api_key,
+    // Return the full secret value (never the redacted Debug/Display form). This is the only
+    // time it is ever exposed.
+    api_key: api_key.to_string_be_careful(), // NB: This is okay in this case
   }))
 }
