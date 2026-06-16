@@ -14,9 +14,9 @@ use redis_common::redis_cache_keys::RedisCacheKeys;
 use sqlx::pool::PoolConnection;
 use sqlx::{Executor, MySql, MySqlConnection, MySqlPool};
 
-use crate::http_server::session::lookup::user_session_extended::{UserSessionExtended, UserSessionPreferences, UserSessionPremiumPlanInfo, UserSessionRoleAndPermissions, UserSessionSubscriptionPlan, UserSessionUserDetails};
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
-use crate::http_server::session::session_checker_error::SessionCheckerError;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::{UserSessionExtended, UserSessionPreferences, UserSessionPremiumPlanInfo, UserSessionRoleAndPermissions, UserSessionSubscriptionPlan, UserSessionUserDetails};
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker_error::SessionCheckerError;
 
 #[derive(Clone)]
 pub struct SessionChecker {

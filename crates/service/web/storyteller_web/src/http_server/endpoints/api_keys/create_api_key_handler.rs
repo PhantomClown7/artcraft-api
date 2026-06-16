@@ -10,7 +10,7 @@ use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::api_keys::insert_api_key::{insert_api_key, InsertApiKeyArgs};
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 use crate::util::generate_api_key::generate_api_key;

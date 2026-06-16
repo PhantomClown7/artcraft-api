@@ -23,7 +23,7 @@ use mysql_queries::queries::users::user::update::set_user_feature_flags::{set_us
 use mysql_queries::queries::users::user_profiles::get_user_profile_by_token::get_user_profile_by_token;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::web_utils::response_error_helpers::to_simple_json_error;
 use crate::http_server::user_lookup::user_session::require_moderator::require_moderator;

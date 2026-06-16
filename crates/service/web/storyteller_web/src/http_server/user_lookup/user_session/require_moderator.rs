@@ -5,7 +5,7 @@ use sqlx::{Executor, MySql};
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 
 /// `mysql_executor` can be any sqlx executor — pass `&server_state.mysql_pool` to grab a
 /// fresh connection, or an in-flight connection/transaction (`&mut *connection`) to reuse

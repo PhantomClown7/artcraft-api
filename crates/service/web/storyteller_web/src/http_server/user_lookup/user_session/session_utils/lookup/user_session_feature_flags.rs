@@ -113,7 +113,7 @@ mod tests {
 
   use enums::by_table::users::user_feature_flag::UserFeatureFlag;
 
-  use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+  use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
   mod construction {
     use super::*;

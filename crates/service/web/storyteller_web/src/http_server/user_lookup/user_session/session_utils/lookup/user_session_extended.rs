@@ -3,7 +3,7 @@ use enums::common::payments_namespace::PaymentsNamespace;
 use enums::common::visibility::Visibility;
 use tokens::tokens::users::UserToken;
 
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 
 #[derive(Clone, Default)]
 pub struct UserSessionExtended {

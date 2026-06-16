@@ -3,8 +3,8 @@ use log::warn;
 use sqlx::MySqlConnection;
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::session::lookup::user_session_extended::UserSessionExtended;
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_extended::UserSessionExtended;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 
 /// Pass an in-flight connection (`&mut *connection`) to reuse one the handler already holds.
 /// (The extended lookup runs two queries, so it takes a concrete `&mut MySqlConnection` — which

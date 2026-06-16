@@ -21,7 +21,7 @@ use redis_caching::redis_ttl_cache::RedisTtlCache;
 use redis_common::redis_cache_keys::RedisCacheKeys;
 use user_input_common::check_for_slurs::contains_slurs;
 
-use crate::http_server::session::session_checker::SessionChecker;
+use crate::http_server::user_lookup::user_session::session_utils::session_checker::SessionChecker;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::validations::validate_profile_cashapp_username::{normalize_cashapp_username_for_storage, validate_profile_cashapp_username};
 use crate::http_server::validations::validate_profile_discord_username::validate_profile_discord_username;

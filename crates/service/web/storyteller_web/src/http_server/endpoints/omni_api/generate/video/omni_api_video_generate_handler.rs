@@ -42,7 +42,7 @@ use crate::http_server::endpoints::omni_api::generate::video::insert_db_job::sha
 use crate::http_server::endpoints::omni_api::generate::video::kinovi_account::KinoviAccount;
 use crate::http_server::endpoints::omni_api::generate::video::pipeline_v2::run_pipeline_v2::{run_pipeline_v2, RunPipelineV2Args};
 use crate::http_server::endpoints::omni_api::shared_utils::video::validate_video_request::validate_video_request;
-use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
+use crate::http_server::user_lookup::user_session::session_utils::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
 use crate::state::server_state::ServerState;
