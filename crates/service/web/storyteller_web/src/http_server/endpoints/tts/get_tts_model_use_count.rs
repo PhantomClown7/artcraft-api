@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpMessage, HttpRequest};
@@ -28,7 +29,7 @@ pub struct GetTtsModelUseCountSuccessResponse {
 pub async fn get_tts_model_use_count_handler(
   http_request: HttpRequest,
   path: Path<GetTtsModelUseCountPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetTtsModelUseCountSuccessResponse>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetTtsModelUseCountSuccessResponse>, CommonWebError>
 {
   let mut redis = server_state.redis_pool
       .get()
@@ -45,7 +46,7 @@ pub async fn get_tts_model_use_count_handler(
         CommonWebError::from_error(e)
       })?;
 
-  Ok(web::Json(GetTtsModelUseCountSuccessResponse {
+  Ok(Json(GetTtsModelUseCountSuccessResponse {
     success: true,
     count,
   }))

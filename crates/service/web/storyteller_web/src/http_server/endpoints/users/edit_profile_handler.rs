@@ -5,6 +5,7 @@
 
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 use sqlx::MySqlPool;
@@ -61,11 +62,11 @@ pub struct EditProfileSuccessResponse {
 pub async fn edit_profile_handler(
   http_request: HttpRequest,
   path: Path<EditProfilePathInfo>,
-  request: web::Json<EditProfileRequest>,
+  request: Json<EditProfileRequest>,
   mysql_pool: web::Data<MySqlPool>,
   redis_ttl_cache: web::Data<RedisTtlCache>,
   session_checker: web::Data<SessionChecker>,
-) -> Result<web::Json<EditProfileSuccessResponse>, CommonWebError>
+) -> Result<Json<EditProfileSuccessResponse>, CommonWebError>
 {
   let maybe_user_session = session_checker
       .maybe_get_user_session(&http_request, &mysql_pool)
@@ -285,5 +286,5 @@ pub async fn edit_profile_handler(
     success: true,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

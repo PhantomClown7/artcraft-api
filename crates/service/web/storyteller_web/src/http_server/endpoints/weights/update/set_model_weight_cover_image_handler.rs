@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
@@ -54,8 +55,8 @@ pub struct SetModelWeightCoverImagePathInfo {
 pub async fn set_model_weight_cover_image_handler(
   http_request: HttpRequest,
   path: Path<SetModelWeightCoverImagePathInfo>,
-  request: web::Json<SetModelWeightCoverImageRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SetModelWeightCoverImageResponse>, CommonWebError>
+  request: Json<SetModelWeightCoverImageRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SetModelWeightCoverImageResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -160,5 +161,5 @@ pub async fn set_model_weight_cover_image_handler(
     }
   };
 
-  Ok(web::Json(SetModelWeightCoverImageResponse { success: true }))
+  Ok(Json(SetModelWeightCoverImageResponse { success: true }))
 }

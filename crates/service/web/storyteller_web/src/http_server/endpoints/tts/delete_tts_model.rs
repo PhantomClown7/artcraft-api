@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest};
@@ -37,9 +38,9 @@ pub struct DeleteTtsModelRequest {
 pub async fn delete_tts_model_handler(
   http_request: HttpRequest,
   path: Path<DeleteTtsModelPathInfo>,
-  request: web::Json<DeleteTtsModelRequest>,
+  request: Json<DeleteTtsModelRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
   // NB: Disable if we've migrated to model_weights
   if server_state.flags.switch_tts_to_model_weights {
     warn!("Migration to model_weights for tts. Cannot delete old model.");
@@ -154,5 +155,5 @@ pub async fn delete_tts_model_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

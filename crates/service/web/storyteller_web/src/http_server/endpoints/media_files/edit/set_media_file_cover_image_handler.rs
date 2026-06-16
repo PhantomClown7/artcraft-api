@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{info, warn};
 use utoipa::ToSchema;
@@ -48,9 +49,9 @@ pub struct SetMediaFileCoverImageRequest {
 pub async fn set_media_file_cover_image_handler(
   http_request: HttpRequest,
   path: Path<MediaFileTokenPathInfo>,
-  request: web::Json<SetMediaFileCoverImageRequest>,
+  request: Json<SetMediaFileCoverImageRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>{
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>{
   let maybe_user_session = server_state
       .session_checker
       .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -152,5 +153,5 @@ pub async fn set_media_file_cover_image_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

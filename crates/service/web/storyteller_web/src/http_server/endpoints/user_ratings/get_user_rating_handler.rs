@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::{error, info};
 use utoipa::ToSchema;
 
@@ -62,7 +63,7 @@ pub struct GetUserRatingResponse {
 pub async fn get_user_rating_handler(
   http_request: HttpRequest,
   path: web::Path<GetUserRatingPath>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetUserRatingResponse>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetUserRatingResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
@@ -119,5 +120,5 @@ pub async fn get_user_rating_handler(
     maybe_rating_value: maybe_rating.map(|rating| rating.rating_value),
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

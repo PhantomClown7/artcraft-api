@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, warn};
 
@@ -33,8 +34,8 @@ pub struct EditTtsResultRequest {
 pub async fn edit_tts_inference_result_handler(
   http_request: HttpRequest,
   path: Path<EditTtsResultPathInfo>,
-  request: web::Json<EditTtsResultRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
+  request: Json<EditTtsResultRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -120,5 +121,5 @@ pub async fn edit_tts_inference_result_handler(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

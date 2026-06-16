@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::{Path, Query};
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
@@ -121,7 +122,7 @@ pub async fn list_weights_by_user_handler(
   path: Path<ListWeightsByUserPathInfo>,
   query: Query<ListWeightsForUserQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<ListWeightsByUserSuccessResponse>, CommonWebError> {
+) -> Result<Json<ListWeightsByUserSuccessResponse>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -245,5 +246,5 @@ pub async fn list_weights_by_user_handler(
   };
 
   
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

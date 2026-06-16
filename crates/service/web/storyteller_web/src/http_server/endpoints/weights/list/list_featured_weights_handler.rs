@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Query;
 use actix_web::{web, HttpRequest};
@@ -140,7 +141,7 @@ pub async fn list_featured_weights_handler(
   http_request: HttpRequest,
   query: Query<ListFeaturedWeightsQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<ListFeaturedWeightsSuccessResponse>, impl ResponseError> {
+) -> Result<Json<ListFeaturedWeightsSuccessResponse>, impl ResponseError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -280,5 +281,5 @@ pub async fn list_featured_weights_handler(
         }).collect::<Vec<_>>(),
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

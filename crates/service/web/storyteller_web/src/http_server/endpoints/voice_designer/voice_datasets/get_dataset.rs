@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
@@ -40,7 +41,7 @@ pub async fn get_dataset_handler(
     http_request: HttpRequest,
     path: Path<GetDatasetPathInfo>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<GetDatasetResponse>, CommonWebError> {
+) -> Result<Json<GetDatasetResponse>, CommonWebError> {
 
     let maybe_user_session = server_state
         .session_checker
@@ -107,5 +108,5 @@ pub async fn get_dataset_handler(
         updated_at: dataset.updated_at,
     };
 
-    Ok(web::Json(response))
+    Ok(Json(response))
 }

@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest};
 use log::{error, warn};
@@ -45,8 +46,8 @@ pub struct KillTtsInferenceJobsResponse {
 
 pub async fn kill_tts_inference_jobs_handler(
   http_request: HttpRequest,
-  request: web::Json<KillTtsInferenceJobsRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<KillTtsInferenceJobsResponse>, CommonWebError>
+  request: Json<KillTtsInferenceJobsRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<KillTtsInferenceJobsResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -88,5 +89,5 @@ pub async fn kill_tts_inference_jobs_handler(
     success: true,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

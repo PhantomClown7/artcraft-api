@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpMessage, HttpRequest};
@@ -29,7 +30,7 @@ pub struct GetTtsResultSuccessResponse {
 pub async fn get_tts_inference_result_handler(
   http_request: HttpRequest,
   path: Path<GetTtsResultPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetTtsResultSuccessResponse>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetTtsResultSuccessResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -80,7 +81,7 @@ pub async fn get_tts_inference_result_handler(
     inference_result.maybe_moderator_fields = None;
   }
 
-  Ok(web::Json(GetTtsResultSuccessResponse {
+  Ok(Json(GetTtsResultSuccessResponse {
     success: true,
     result: inference_result,
   }))

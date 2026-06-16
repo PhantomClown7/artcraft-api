@@ -6,6 +6,7 @@ use std::fmt::Debug;
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::{info, warn};
 use serde::Deserialize;
 use serde::Serialize;
@@ -55,9 +56,9 @@ const ROUTING_TAG_HEADER_NAME: &str = "routing-tag";
 // pub async fn get_dataset_by_token
 pub async fn create_voice_handler(
     http_request: HttpRequest,
-    request: web::Json<EnqueueCreateVoiceRequest>,
+    request: Json<EnqueueCreateVoiceRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<EnqueueCreateVoiceRequestSuccessResponse>, CommonWebError> {
+) -> Result<Json<EnqueueCreateVoiceRequestSuccessResponse>, CommonWebError> {
     // voice data set token ... zsd_wb08asm0m4a4cz42wwqked6tfg6e e.g
 
     // need this for the job
@@ -181,5 +182,5 @@ pub async fn create_voice_handler(
             inference_job_token: job_token,
         };
 
-    Ok(web::Json(response))
+    Ok(Json(response))
 }

@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest};
 use log::{info, warn};
@@ -23,9 +24,9 @@ pub struct AddIpBanRequest {
 // NB: Not using derive_more::Display since Clion doesn't understand it.
 pub async fn add_ip_ban_handler(
   http_request: HttpRequest,
-  request: web::Json<AddIpBanRequest>,
+  request: Json<AddIpBanRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -70,5 +71,5 @@ pub async fn add_ip_ban_handler(
         CommonWebError::from_anyhow_error(err)
       })?;
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

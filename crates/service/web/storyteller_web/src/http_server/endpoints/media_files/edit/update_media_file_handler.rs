@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 
@@ -36,8 +37,8 @@ pub struct UpdateMediaFilePathInfo {
 pub async fn update_media_file_handler(
     http_request: HttpRequest,
     path: Path<UpdateMediaFilePathInfo>,
-    request: web::Json<UpdateMediaFileRequest>,
-    server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<UpdateMediaFileResponse>, CommonWebError>
+    request: Json<UpdateMediaFileRequest>,
+    server_state: web::Data<Arc<ServerState>>) -> Result<Json<UpdateMediaFileResponse>, CommonWebError>
 {
     let maybe_user_session = server_state
         .session_checker
@@ -116,5 +117,5 @@ pub async fn update_media_file_handler(
         }
     };
 
-    Ok(web::Json(UpdateMediaFileResponse { success: true }))
+    Ok(Json(UpdateMediaFileResponse { success: true }))
 }

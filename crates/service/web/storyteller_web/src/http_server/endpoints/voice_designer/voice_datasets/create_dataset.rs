@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::{error, warn};
 
 use enums::common::visibility::Visibility;
@@ -31,7 +32,7 @@ pub struct CreateDatasetResponse {
 // NB: Not using DeriveMore since Clion doesn't understand it.
 // =============== Handler ===============
 
-pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Json<CreateDatasetRequest>, server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<CreateDatasetResponse>, CommonWebError> {
+pub async fn create_dataset_handler(http_request: HttpRequest, request: Json<CreateDatasetRequest>, server_state: web::Data<Arc<ServerState>>) -> Result<Json<CreateDatasetResponse>, CommonWebError> {
   let maybe_user_session = server_state.session_checker.maybe_get_user_session(&http_request, &server_state.mysql_pool).await.map_err(|e| {
     error!("Error getting user session: {:?}", e);
     CommonWebError::from_error(e)
@@ -75,5 +76,5 @@ pub async fn create_dataset_handler(http_request: HttpRequest, request: web::Jso
   };
 
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

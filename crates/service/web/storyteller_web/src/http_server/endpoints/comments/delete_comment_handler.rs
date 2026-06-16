@@ -7,6 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -89,9 +90,9 @@ impl fmt::Display for DeleteCommentError {
 pub async fn delete_comment_handler(
   http_request: HttpRequest,
   path: Path<DeleteCommentPathInfo>,
-  request: web::Json<DeleteCommentRequest>,
+  request: Json<DeleteCommentRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, DeleteCommentError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, DeleteCommentError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
@@ -165,5 +166,5 @@ pub async fn delete_comment_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

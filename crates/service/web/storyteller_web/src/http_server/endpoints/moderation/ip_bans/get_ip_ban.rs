@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest};
@@ -42,7 +43,7 @@ pub async fn get_ip_ban_handler(
   http_request: HttpRequest,
   path: Path<GetIpBanPathInfo>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<GetIpBanResponse>, CommonWebError> {
+) -> Result<Json<GetIpBanResponse>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -97,5 +98,5 @@ pub async fn get_ip_ban_handler(
     ip_address_ban: result,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

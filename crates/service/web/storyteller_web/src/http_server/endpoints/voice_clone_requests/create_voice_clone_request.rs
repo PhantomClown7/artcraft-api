@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest};
 use log::warn;
@@ -64,8 +65,8 @@ pub struct CreateVoiceRequestResponse {
 
 pub async fn create_voice_clone_request_handler(
   http_request: HttpRequest,
-  request: web::Json<CreateVoiceRequestRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<CreateVoiceRequestResponse>, CommonWebError>
+  request: Json<CreateVoiceRequestRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<CreateVoiceRequestResponse>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -113,5 +114,5 @@ pub async fn create_voice_clone_request_handler(
     success: true,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

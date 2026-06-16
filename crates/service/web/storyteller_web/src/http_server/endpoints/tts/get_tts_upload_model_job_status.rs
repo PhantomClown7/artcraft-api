@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpMessage, HttpRequest};
@@ -49,7 +50,7 @@ pub struct GetTtsUploadModelStatusSuccessResponse {
 pub async fn get_tts_upload_model_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetTtsUploadModelStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetTtsUploadModelStatusSuccessResponse>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetTtsUploadModelStatusSuccessResponse>, CommonWebError>
 {
   // NB: Since this is publicly exposed, we don't query sensitive data.
   let record = get_tts_model_upload_job_status(&path.token, &server_state.mysql_pool)
@@ -92,7 +93,7 @@ pub async fn get_tts_upload_model_job_status_handler(
     updated_at: record.updated_at,
   };
 
-  Ok(web::Json(GetTtsUploadModelStatusSuccessResponse {
+  Ok(Json(GetTtsUploadModelStatusSuccessResponse {
     success: true,
     state: model_for_response,
   }))

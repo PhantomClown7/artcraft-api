@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Query;
 use actix_web::{web, HttpRequest};
@@ -107,7 +108,7 @@ pub async fn list_beta_keys_handler(
   http_request: HttpRequest,
   query: Query<ListBetaKeysQueryParams>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<ListBetaKeysSuccessResponse>, CommonWebError> {
+) -> Result<Json<ListBetaKeysSuccessResponse>, CommonWebError> {
   let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool)
       .await?;
 
@@ -212,5 +213,5 @@ pub async fn list_beta_keys_handler(
     }
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

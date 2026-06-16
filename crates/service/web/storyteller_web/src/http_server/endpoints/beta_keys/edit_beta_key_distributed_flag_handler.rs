@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest};
@@ -53,10 +54,10 @@ pub struct EditBetaKeyDistributedFlagSuccessResponse {
 )]
 pub async fn edit_beta_key_distributed_flag_handler(
   http_request: HttpRequest,
-  request: web::Json<EditBetaKeyDistributedFlagRequest>,
+  request: Json<EditBetaKeyDistributedFlagRequest>,
   path: Path<EditBetaKeyDistributedFlagPathInfo>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<web::Json<EditBetaKeyDistributedFlagSuccessResponse>, CommonWebError>
+) -> Result<Json<EditBetaKeyDistributedFlagSuccessResponse>, CommonWebError>
 {
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -71,5 +72,5 @@ pub async fn edit_beta_key_distributed_flag_handler(
     success: true,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

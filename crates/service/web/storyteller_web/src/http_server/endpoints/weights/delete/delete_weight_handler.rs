@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 use utoipa::ToSchema;
@@ -50,9 +51,9 @@ pub struct DeleteWeightRequest {
 pub async fn delete_weight_handler(
     http_request: HttpRequest,
     path: Path<DeleteWeightPathInfo>,
-    request: web::Json<DeleteWeightRequest>,
+    request: Json<DeleteWeightRequest>,
     server_state: web::Data<Arc<ServerState>>
-  ) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>{
+  ) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>{
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -150,5 +151,5 @@ pub async fn delete_weight_handler(
       }
     };
   
-    Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+    Ok(Json(SimpleGenericJsonSuccess { success: true }))
   }

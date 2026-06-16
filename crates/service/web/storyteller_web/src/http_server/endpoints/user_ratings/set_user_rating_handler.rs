@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::{error, info, warn};
 use sqlx::Acquire;
 use utoipa::ToSchema;
@@ -67,8 +68,8 @@ pub struct SetUserRatingResponse {
 )]
 pub async fn set_user_rating_handler(
   http_request: HttpRequest,
-  request: web::Json<SetUserRatingRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SetUserRatingResponse>, CommonWebError>
+  request: Json<SetUserRatingRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SetUserRatingResponse>, CommonWebError>
 {
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -237,5 +238,5 @@ pub async fn set_user_rating_handler(
     new_positive_rating_count_for_entity: count.positive_count,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

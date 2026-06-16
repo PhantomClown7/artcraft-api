@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::warn;
 use utoipa::ToSchema;
 
@@ -48,9 +49,9 @@ pub struct RedeemBetaKeySuccessResponse {
 )]
 pub async fn redeem_beta_key_handler(
   http_request: HttpRequest,
-  request: web::Json<RedeemBetaKeyRequest>,
+  request: Json<RedeemBetaKeyRequest>,
   server_state: web::Data<Arc<ServerState>>,
-) -> Result<web::Json<RedeemBetaKeySuccessResponse>, CommonWebError>
+) -> Result<Json<RedeemBetaKeySuccessResponse>, CommonWebError>
 {
   let user_session = require_user_session(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -90,7 +91,7 @@ pub async fn redeem_beta_key_handler(
     success: true,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }
 
 async fn enroll_in_studio(

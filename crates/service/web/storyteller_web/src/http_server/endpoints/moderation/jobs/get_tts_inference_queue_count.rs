@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest};
 use log::warn;
@@ -34,7 +35,7 @@ pub struct GetTtsInferenceQueueCountResponse {
 pub async fn get_tts_inference_queue_count_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<GetTtsInferenceQueueCountResponse>, CommonWebError> {
+) -> Result<Json<GetTtsInferenceQueueCountResponse>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -85,5 +86,5 @@ pub async fn get_tts_inference_queue_count_handler(
     attempt_failed_count: result.attempt_failed_count,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

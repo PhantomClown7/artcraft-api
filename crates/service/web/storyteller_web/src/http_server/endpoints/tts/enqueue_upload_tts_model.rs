@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::warn;
 
 use crate::http_server::validations::validate_model_title::validate_model_title;
@@ -69,9 +70,9 @@ pub struct UploadTtsModelSuccessResponse {
 // NB: Not using derive_more::Display since Clion doesn't understand it.
 pub async fn upload_tts_model_handler(
   http_request: HttpRequest,
-  request: web::Json<UploadTtsModelRequest>,
+  request: Json<UploadTtsModelRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<UploadTtsModelSuccessResponse>, CommonWebError> {
+) -> Result<Json<UploadTtsModelSuccessResponse>, CommonWebError> {
 
   if server_state.flags.disable_tts {
     return Err(CommonWebError::TooManyRequests);
@@ -186,7 +187,7 @@ pub async fn upload_tts_model_handler(
         CommonWebError::from_anyhow_error(e)
       })?;
 
-  Ok(web::Json(UploadTtsModelSuccessResponse {
+  Ok(Json(UploadTtsModelSuccessResponse {
     success: true,
     job_token: job_token.to_string(),
     job_type: download_job_type,

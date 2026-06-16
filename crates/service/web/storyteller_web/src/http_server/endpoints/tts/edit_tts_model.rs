@@ -92,7 +92,7 @@ pub async fn edit_tts_model_handler(
   http_request: HttpRequest,
   path: Path<EditTtsModelPathInfo>,
   request: Json<EditTtsModelRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   // NB: Disable if we've migrated to model_weights
   if server_state.flags.switch_tts_to_model_weights {
@@ -300,7 +300,7 @@ pub async fn edit_tts_model_handler(
     let _r = redis_ttl_cache.delete_from_cache(&cache_key).ok();
   }
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }
 
 async fn update_mod_details(

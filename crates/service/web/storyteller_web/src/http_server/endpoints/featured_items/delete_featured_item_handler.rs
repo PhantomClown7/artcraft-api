@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest};
 use log::{error, warn};
@@ -46,9 +47,9 @@ pub struct DeleteFeaturedItemRequest {
 )]
 pub async fn delete_featured_item_handler(
   http_request: HttpRequest,
-  request: web::Json<DeleteFeaturedItemRequest>,
+  request: Json<DeleteFeaturedItemRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   // NB(bt,2023-12-14): Kasisnu found that we're getting entity type mismatches in production. Apart from
   // querying the database for entity existence, this is the next best way to prevent incorrect comment
@@ -137,5 +138,5 @@ pub async fn delete_featured_item_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

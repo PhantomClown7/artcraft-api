@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use chrono::{DateTime, Utc};
 use log::{info, warn};
 
@@ -46,7 +47,7 @@ pub async fn list_available_voices_handler(
     http_request: HttpRequest,
     query: web::Query<ListZsVoicesQuery>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<ListZsVoicesSuccessResponse>, CommonWebError> {
+) -> Result<Json<ListZsVoicesSuccessResponse>, CommonWebError> {
 
       let maybe_user_session = server_state.session_checker.maybe_get_user_session(
           &http_request,
@@ -156,7 +157,7 @@ pub async fn list_available_voices_handler(
         cursor_previous,
     };
 
-    Ok(web::Json(response))
+    Ok(Json(response))
 }
 
 

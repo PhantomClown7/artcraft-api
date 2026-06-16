@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 
@@ -31,9 +32,9 @@ pub struct DeleteSampleRequest {
 pub async fn delete_sample_handler(
   http_request: HttpRequest,
   path: Path<DeleteSamplePathInfo>,
-  request: web::Json<DeleteSampleRequest>,
+  request: Json<DeleteSampleRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -120,5 +121,5 @@ pub async fn delete_sample_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

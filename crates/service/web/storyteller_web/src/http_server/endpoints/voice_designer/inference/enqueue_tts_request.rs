@@ -5,6 +5,7 @@
 use std::sync::Arc;
 
 use actix_web::{web, HttpRequest};
+use actix_web::web::Json;
 use log::warn;
 use serde::Deserialize;
 use serde::Serialize;
@@ -76,9 +77,9 @@ pub struct EnqueueTTSRequestSuccessResponse {
 )]
 pub async fn enqueue_tts_request(
     http_request: HttpRequest,
-    request: web::Json<EnqueueTTSRequest>,
+    request: Json<EnqueueTTSRequest>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<EnqueueTTSRequestSuccessResponse>, CommonWebError> {
+) -> Result<Json<EnqueueTTSRequestSuccessResponse>, CommonWebError> {
 
     let mut maybe_user_token: Option<UserToken> = None;
 
@@ -194,5 +195,5 @@ pub async fn enqueue_tts_request(
         inference_job_token: job_token,
     };
 
-    Ok(web::Json(response))
+    Ok(Json(response))
 }

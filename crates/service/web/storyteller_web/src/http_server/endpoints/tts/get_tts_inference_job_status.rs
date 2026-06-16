@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpMessage, HttpRequest};
@@ -61,7 +62,7 @@ pub struct GetTtsInferenceStatusSuccessResponse {
 pub async fn get_tts_inference_job_status_handler(
   http_request: HttpRequest,
   path: Path<GetTtsInferenceStatusPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetTtsInferenceStatusSuccessResponse>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetTtsInferenceStatusSuccessResponse>, CommonWebError>
 {
   let job_token = path.into_inner().token;
 
@@ -80,7 +81,7 @@ pub async fn get_tts_inference_job_status_handler(
     legacy_lookup(&job_token, &server_state).await?
   };
 
-  Ok(web::Json(GetTtsInferenceStatusSuccessResponse {
+  Ok(Json(GetTtsInferenceStatusSuccessResponse {
     success: true,
     state: record_for_response,
   }))

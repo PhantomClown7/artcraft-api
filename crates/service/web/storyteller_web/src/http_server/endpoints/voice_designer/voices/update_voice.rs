@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, warn};
 
@@ -44,8 +45,8 @@ pub struct UpdateVoicePathInfo {
 pub async fn update_voice_handler(
   http_request: HttpRequest,
   path: Path<UpdateVoicePathInfo>,
-  request: web::Json<UpdateVoiceRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
+  request: Json<UpdateVoiceRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -163,5 +164,5 @@ pub async fn update_voice_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

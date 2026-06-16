@@ -7,6 +7,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest, HttpResponse};
@@ -91,9 +92,9 @@ impl fmt::Display for DeleteUserBookmarkError {
 pub async fn delete_user_bookmark_handler(
   http_request: HttpRequest,
   path: Path<DeleteUserBookmarkPathInfo>,
-  _request: web::Json<DeleteUserBookmarkRequest>,
+  _request: Json<DeleteUserBookmarkRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, DeleteUserBookmarkError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, DeleteUserBookmarkError> {
   let mut mysql_connection = server_state.mysql_pool
       .acquire()
       .await
@@ -180,5 +181,5 @@ pub async fn delete_user_bookmark_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

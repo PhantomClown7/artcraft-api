@@ -47,7 +47,7 @@ impl fmt::Display for GetW2lInferenceQueueCountError {
 pub async fn get_w2l_inference_queue_count_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<GetW2lInferenceQueueCountResponse>, GetW2lInferenceQueueCountError> {
+) -> Result<Json<GetW2lInferenceQueueCountResponse>, GetW2lInferenceQueueCountError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -92,5 +92,5 @@ pub async fn get_w2l_inference_queue_count_handler(
     seconds_since_first: result.seconds_since_first,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

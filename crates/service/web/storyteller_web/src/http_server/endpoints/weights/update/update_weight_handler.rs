@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::warn;
 use sqlx::MySqlPool;
@@ -78,10 +79,10 @@ pub struct UpdateWeightPathInfo {
 pub async fn update_weight_handler(
     http_request: HttpRequest,
     path: Path<UpdateWeightPathInfo>,
-    request: web::Json<UpdateWeightRequest>,
+    request: Json<UpdateWeightRequest>,
     mysql_pool: web::Data<MySqlPool>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
     let mut mysql_connection = mysql_pool
         .acquire()
         .await
@@ -218,5 +219,5 @@ pub async fn update_weight_handler(
         }
     }
 
-    Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+    Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

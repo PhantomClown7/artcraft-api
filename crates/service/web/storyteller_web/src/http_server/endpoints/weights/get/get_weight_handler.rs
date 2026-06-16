@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
@@ -102,7 +103,7 @@ pub async fn get_weight_handler(
     http_request: HttpRequest,
     path: Path<GetWeightPathInfo>,
     server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<GetWeightResponse>, CommonWebError> {
+) -> Result<Json<GetWeightResponse>, CommonWebError> {
     let maybe_user_session = server_state
         .session_checker
         .maybe_get_user_session(&http_request, &server_state.mysql_pool)
@@ -213,5 +214,5 @@ pub async fn get_weight_handler(
         updated_at: weight.updated_at,
     };
 
-    Ok(web::Json(response))
+    Ok(Json(response))
 }

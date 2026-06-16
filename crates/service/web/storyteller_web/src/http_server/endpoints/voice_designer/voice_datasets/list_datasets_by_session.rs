@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
@@ -61,7 +62,7 @@ impl ResponseError for ListDatasetsByUserError {
 pub async fn list_datasets_by_session_handler(
   http_request: HttpRequest,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<ListDatasetsByUserSuccessResponse>, ListDatasetsByUserError> {
+) -> Result<Json<ListDatasetsByUserSuccessResponse>, ListDatasetsByUserError> {
 
   let user_session = server_state
       .session_checker
@@ -122,5 +123,5 @@ pub async fn list_datasets_by_session_handler(
       datasets,
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

@@ -84,7 +84,7 @@ pub async fn moderator_edit_user_feature_flags_handler(
   request: Json<EditUserFeatureFlagsRequest>,
   server_state: Data<Arc<ServerState>>,
   redis_pool: Data<r2d2::Pool<Client>>,
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let user_session = require_moderator(&http_request, &server_state.session_checker, &server_state.mysql_pool).await?;
 
@@ -189,5 +189,5 @@ pub async fn moderator_edit_user_feature_flags_handler(
     let _r: Result<Option<String>, _> = redis.del(&cache_key);
   }
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

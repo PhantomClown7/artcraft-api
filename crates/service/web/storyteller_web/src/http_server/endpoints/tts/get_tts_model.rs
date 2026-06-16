@@ -6,6 +6,7 @@
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use chrono::{DateTime, Utc};
 use log::warn;
@@ -152,7 +153,7 @@ pub struct TtsModelModeratorFieldInfo {
 pub async fn get_tts_model_handler(
   http_request: HttpRequest,
   path: Path<GetTtsModelPathInfo>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<GetTtsModelSuccessResponse>, CommonWebError>
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<GetTtsModelSuccessResponse>, CommonWebError>
 {
   let mut mysql_connection = server_state.mysql_pool.acquire()
       .await
@@ -327,5 +328,5 @@ pub async fn get_tts_model_handler(
     },
   };
 
-  Ok(web::Json(response))
+  Ok(Json(response))
 }

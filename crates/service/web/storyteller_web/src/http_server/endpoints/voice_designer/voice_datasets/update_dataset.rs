@@ -2,6 +2,7 @@ use std::fmt;
 use std::sync::Arc;
 
 use actix_web::web::Path;
+use actix_web::web::Json;
 use actix_web::{web, HttpRequest};
 use log::{error, warn};
 
@@ -45,8 +46,8 @@ pub struct UpdateDatasetPathInfo {
 pub async fn update_dataset_handler(
   http_request: HttpRequest,
   path: Path<UpdateDatasetPathInfo>,
-  request: web::Json<UpdateDatasetRequest>,
-  server_state: web::Data<Arc<ServerState>>) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError>
+  request: Json<UpdateDatasetRequest>,
+  server_state: web::Data<Arc<ServerState>>) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError>
 {
   let maybe_user_session = server_state
       .session_checker
@@ -166,5 +167,5 @@ pub async fn update_dataset_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }

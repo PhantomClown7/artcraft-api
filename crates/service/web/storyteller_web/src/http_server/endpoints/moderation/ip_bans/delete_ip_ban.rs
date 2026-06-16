@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use actix_web::error::ResponseError;
+use actix_web::web::Json;
 use actix_web::http::StatusCode;
 use actix_web::web::Path;
 use actix_web::{web, HttpRequest};
@@ -27,9 +28,9 @@ pub struct DeleteIpBanRequest {
 pub async fn delete_ip_ban_handler(
   http_request: HttpRequest,
   path: Path<DeleteIpBanPathInfo>,
-  request: web::Json<DeleteIpBanRequest>,
+  request: Json<DeleteIpBanRequest>,
   server_state: web::Data<Arc<ServerState>>
-) -> Result<web::Json<SimpleGenericJsonSuccess>, CommonWebError> {
+) -> Result<Json<SimpleGenericJsonSuccess>, CommonWebError> {
 
   let maybe_user_session = server_state
       .session_checker
@@ -77,5 +78,5 @@ pub async fn delete_ip_ban_handler(
     }
   };
 
-  Ok(web::Json(SimpleGenericJsonSuccess { success: true }))
+  Ok(Json(SimpleGenericJsonSuccess { success: true }))
 }
