@@ -9,7 +9,7 @@ use utoipa::ToSchema;
 
 use crate::configs::supported_languages_for_models::{get_canonicalized_language_tag_for_model, get_primary_language_subtag};
 use crate::http_server::common_responses::common_web_error::CommonWebError;
-use crate::http_server::web_utils::user_session::require_user_session_extended::require_user_session_extended;
+use crate::http_server::user_lookup::user_session::require_user_session_extended::require_user_session_extended;
 use crate::state::server_state::ServerState;
 use enums::by_table::media_files::media_file_type::MediaFileType;
 use enums::by_table::model_weights::weights_types::WeightsType;

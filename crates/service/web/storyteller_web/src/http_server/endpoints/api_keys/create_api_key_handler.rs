@@ -11,7 +11,7 @@ use mysql_queries::queries::api_keys::insert_api_key::{insert_api_key, InsertApi
 
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 use crate::util::generate_api_key::generate_api_key;
 

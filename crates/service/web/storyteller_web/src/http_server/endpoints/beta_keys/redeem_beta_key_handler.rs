@@ -17,7 +17,7 @@ use mysql_queries::queries::users::user::update::set_user_feature_flags_transact
 use mysql_queries::queries::users::user_sessions::get_user_session_by_token::SessionUserRecord;
 
 use crate::http_server::web_utils::try_delete_session_cache::try_delete_session_cache;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Deserialize, ToSchema)]

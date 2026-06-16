@@ -18,7 +18,7 @@ use tokens::tokens::beta_keys::BetaKeyToken;
 use crate::http_server::common_responses::pagination_page::PaginationPage;
 use crate::http_server::common_responses::common_web_error::CommonWebError;
 use crate::http_server::common_responses::user_details_lite::UserDetailsLight;
-use crate::http_server::web_utils::user_session::require_user_session::require_user_session;
+use crate::http_server::user_lookup::user_session::require_user_session::require_user_session;
 use crate::state::server_state::ServerState;
 
 #[derive(Copy, Clone, Deserialize, ToSchema)]
