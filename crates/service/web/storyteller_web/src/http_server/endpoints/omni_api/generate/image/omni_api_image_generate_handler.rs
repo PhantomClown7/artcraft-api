@@ -14,6 +14,7 @@ use enums::by_table::prompts::prompt_type::PromptType;
 use enums::common::generation::common_generation_mode::CommonGenerationMode;
 use enums::common::generation::common_model_type::CommonModelType;
 use enums::common::generation_provider::GenerationProvider;
+use enums::common::platform_type::PlatformType;
 use http_server_common::request::get_request_ip::get_request_ip;
 use mysql_queries::queries::debug_logs::insert_debug_log::{insert_debug_log, InsertDebugLogArgs};
 use mysql_queries::queries::generic_inference::api_providers::seedance2pro::insert_generic_inference_job_for_seedance2pro_queue_with_apriori_job_token::KinoviVersion;
@@ -35,7 +36,6 @@ use crate::http_server::endpoints::omni_api::generate::image::pipeline_v2::run_p
 use crate::http_server::session::lookup::user_session_feature_flags::UserSessionFeatureFlags;
 use crate::http_server::user_lookup::api_keys::require_api_key_user::require_api_key_user;
 use crate::http_server::validations::validate_idempotency_token_format::validate_idempotency_token_format;
-use crate::http_server::web_utils::get_request_platform_type::get_request_platform_type;
 use crate::state::server_state::ServerState;
 use crate::util::lookup::lookup_media_files_as_cdn_url_list_and_map::lookup_media_files_as_cdn_url_list_and_map;
 
@@ -77,10 +77,6 @@ pub async fn omni_api_image_generate_handler(
   let api_session = require_api_key_user(&http_request, &mut *mysql_connection).await?;
 
   let user_token = &api_session.user_token;
-
-  let maybe_avt_token = server_state
-    .avt_cookie_manager
-    .get_avt_token_from_request(&http_request);
 
   // ==================== MODEL ACCESS CHECK ==================== //
 
@@ -167,7 +163,8 @@ pub async fn omni_api_image_generate_handler(
   // ==================== WRITE RESULT ==================== //
 
   let ip_address = get_request_ip(&http_request);
-  let maybe_platform_type = get_request_platform_type(&http_request);
+  // Omni API requests are always API-key authenticated; hardcode the platform type.
+  let maybe_platform_type = Some(PlatformType::ApiKey);
 
   let mut transaction = mysql_connection
     .begin()
@@ -262,7 +259,7 @@ pub async fn omni_api_image_generate_handler(
           apriori_job_token: &pipeline_result.apriori_job_token,
           idempotency_token: &idempotency_token,
           user_token,
-          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_avt_token: None, // AVT tokens are web-session only; API-key callers have none.
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
@@ -282,7 +279,7 @@ pub async fn omni_api_image_generate_handler(
           apriori_job_token: &pipeline_result.apriori_job_token,
           idempotency_token: &idempotency_token,
           user_token,
-          maybe_avt_token: maybe_avt_token.as_ref(),
+          maybe_avt_token: None, // AVT tokens are web-session only; API-key callers have none.
           maybe_model_type: request.model.map(|v| v.to_common_model_type()),
           maybe_prompt_token: prompt_token.as_ref(),
           maybe_debug_log_event_token: Some(&debug_log_event_token),
