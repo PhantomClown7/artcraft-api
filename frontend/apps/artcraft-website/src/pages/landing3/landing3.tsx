@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, useLayoutEffect } from "react";
+import type { ReactNode } from "react";
 import { isMobile, isMacOs } from "react-device-detect";
 import Lenis from "lenis";
 import gsap from "gsap";
@@ -132,6 +133,44 @@ const MANIFESTO_WORDS: ReadonlyArray<string> = [
   "every",
   "shot.",
 ];
+
+// Hand-drawn marker stroke (tapered ends, slight middle bulge, gentle tilt)
+// that sits behind an emphasized word like a highlighter pass. The wrapping
+// span carries `data-manifesto-underline` so the GSAP timeline can sweep it
+// in left-to-right; pass `animate={false}` for the static (mobile) version.
+const MarkerHighlight = ({
+  children,
+  animate = true,
+}: {
+  children: ReactNode;
+  animate?: boolean;
+}) => (
+  <span className="relative inline-block">
+    <span
+      data-manifesto-underline={animate ? "" : undefined}
+      aria-hidden
+      className="absolute inset-x-[-0.2em] top-[-0.08em] bottom-[-0.18em]"
+      // Hidden initially via a right-side clip; GSAP wipes the clip open
+      // left-to-right so the full-size stroke is revealed (not stretched).
+      style={animate ? { clipPath: "inset(0 100% 0 0)" } : undefined}
+    >
+      <svg
+        viewBox="0 0 120 26"
+        preserveAspectRatio="none"
+        fill="none"
+        className="absolute inset-0 h-full w-full"
+        style={{ transform: "rotate(-3.5deg)" }}
+      >
+        <path
+          d="M3,13 C3,8.5 5,5.5 10,4.6 C13,4.1 16,5 18,4.4 C46,3.6 78,3.7 104,4.5 C110,4.7 114,4 116,6 C118,8 117.5,11 117,13 C117,15.5 118,18 116,20 C114,22 110,21.4 104,21.6 C78,22.4 46,22.5 18,21.7 C16,21.6 13,22 10,21.5 C5,20.6 3,17.5 3,13 Z"
+          fill="#2d81ff"
+          fillOpacity="0.9"
+        />
+      </svg>
+    </span>
+    <span className="relative">{children}</span>
+  </span>
+);
 
 // Lazy autoplay video — defers the network fetch + decoder spin-up until
 // the element is approaching the viewport. Avoids ~7 simultaneous webm
@@ -471,19 +510,18 @@ const Landing3 = () => {
           );
         });
 
-        // Phase 1b — once the sentence is fully revealed, draw a blue
-        // underline in under "control" to land the emphasis.
+        // Phase 1b — once the sentence is fully revealed, sweep a blue
+        // highlighter block across "control" to land the emphasis.
         const manifestoUnderline = manifestoSection.querySelector<HTMLElement>(
           "[data-manifesto-underline]",
         );
         if (manifestoUnderline) {
           gsap.set(manifestoUnderline, {
-            scaleX: 0,
-            transformOrigin: "left center",
+            clipPath: "inset(0 100% 0 0)",
           });
           tl.to(
             manifestoUnderline,
-            { scaleX: 1, duration: 4, ease: "power2.out" },
+            { clipPath: "inset(0 0% 0 0)", duration: 4, ease: "power2.out" },
             ">",
           );
         }
@@ -741,9 +779,7 @@ const Landing3 = () => {
               {MANIFESTO_WORDS.map((w, i) => (
                 <span key={i}>
                   {w === "control" ? (
-                    <span className="underline decoration-primary decoration-[3px] underline-offset-4">
-                      {w}
-                    </span>
+                    <MarkerHighlight animate={false}>{w}</MarkerHighlight>
                   ) : (
                     w
                   )}
@@ -800,18 +836,7 @@ const Landing3 = () => {
                   data-manifesto-word
                   className="inline-block opacity-15 will-change-[opacity,transform]"
                 >
-                  {w === "control" ? (
-                    <span className="relative inline-block">
-                      {w}
-                      <span
-                        data-manifesto-underline
-                        aria-hidden
-                        className="absolute left-0 -bottom-0.5 h-[4px] w-full origin-left scale-x-0 rounded-full bg-primary"
-                      />
-                    </span>
-                  ) : (
-                    w
-                  )}
+                  {w === "control" ? <MarkerHighlight>{w}</MarkerHighlight> : w}
                   {i < MANIFESTO_WORDS.length - 1 ? " " : ""}
                 </span>
               ))}
@@ -1056,7 +1081,7 @@ const Landing3 = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-12 gap-4 sm:gap-6">
-            {/* Reason #1: Text Prompting Sucks */}
+            {/* Reason #1: PC - Control Beyond Text Prompting */}
             <div className="xl:col-span-6 rounded-3xl bg-[#080808] p-6 lg:p-8 group">
               <div className="flex xl:flex-col gap-4 lg:gap-8 h-full flex-col-reverse">
                 <div className="grow h-40">
@@ -1071,7 +1096,7 @@ const Landing3 = () => {
                 <div className="flex flex-col justify-between">
                   <div>
                     <h3 className="font-medium tracking-[-0.02em] text-xl sm:text-2xl lg:text-3xl mb-3 sm:mb-4 leading-tight text-white">
-                      Text Prompting Sucks
+                      Control Beyond Text Prompting
                     </h3>
                     <p className="text-white/60 text-sm sm:text-base lg:text-lg leading-relaxed">
                       <span className="text-primary-400/80 font-semibold">
