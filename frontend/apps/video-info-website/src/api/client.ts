@@ -1,10 +1,18 @@
-import type { VideoInfoReadOnlyResponse } from './types';
+import type {
+  VideoInfoNoteRequest,
+  VideoInfoNoteResponse,
+  VideoInfoUploadResponse,
+} from './types';
 
 // Dev: same-origin `/v1/...`, proxied to http://localhost:12345 by Vite (see
 // vite.config.ts). Prod: call the public API host directly.
 const API_BASE = import.meta.env.DEV ? '' : 'https://api.storyteller.ai';
 
-const READ_ONLY_PATH = '/v1/video_info/read_only';
+// The upload endpoint persists a record (and returns its token) in addition to
+// returning the detected provenance.
+const UPLOAD_PATH = '/v1/video_info/upload';
+
+const NOTES_PATH = '/v1/video_info/notes';
 
 export class VideoInfoApiError extends Error {
   constructor(
@@ -16,16 +24,19 @@ export class VideoInfoApiError extends Error {
   }
 }
 
-/** Upload a video file and return the detected provenance. */
-export async function readVideoInfo(
+/**
+ * Upload a video file, persist a record, and return the detected provenance
+ * along with the stored record's token.
+ */
+export async function uploadVideo(
   file: File,
-): Promise<VideoInfoReadOnlyResponse> {
+): Promise<VideoInfoUploadResponse> {
   const form = new FormData();
-  form.append('file', file, file.name || 'upload.mp4');
+  form.append('file', file, file.name || 'upload');
 
   let response: Response;
   try {
-    response = await fetch(`${API_BASE}${READ_ONLY_PATH}`, {
+    response = await fetch(`${API_BASE}${UPLOAD_PATH}`, {
       method: 'POST',
       body: form,
     });
@@ -52,5 +63,33 @@ export async function readVideoInfo(
     );
   }
 
-  return (await response.json()) as VideoInfoReadOnlyResponse;
+  return (await response.json()) as VideoInfoUploadResponse;
+}
+
+/**
+ * Create or update a note about an uploaded video. Pass
+ * `maybe_uploaded_video_note_token` to update the existing note.
+ */
+export async function saveVideoNote(
+  request: VideoInfoNoteRequest,
+): Promise<VideoInfoNoteResponse> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE}${NOTES_PATH}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request),
+    });
+  } catch (err) {
+    throw new VideoInfoApiError('network', 'Could not reach the server to save your note.');
+  }
+
+  if (response.status === 429) {
+    throw new VideoInfoApiError('rate_limited', 'Saving too quickly — try again in a moment.');
+  }
+  if (!response.ok) {
+    throw new VideoInfoApiError('http', `The server returned an error (${response.status}).`);
+  }
+
+  return (await response.json()) as VideoInfoNoteResponse;
 }
