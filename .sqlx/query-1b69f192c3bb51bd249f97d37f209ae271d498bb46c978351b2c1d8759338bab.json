@@ -1,6 +1,6 @@
 {
   "db_name": "MySQL",
-  "query": "\nSELECT\n    p.token as `token: tokens::tokens::prompts::PromptToken`,\n\n    p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,\n\n    p.maybe_model_type as `maybe_model_type: enums::common::generation::common_model_type::CommonModelType`,\n    p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,\n\n    p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n\n    p.maybe_positive_prompt,\n    p.maybe_negative_prompt,\n\n    p.maybe_generation_mode as `maybe_generation_mode: enums::common::generation::common_generation_mode::CommonGenerationMode`,\n    p.maybe_aspect_ratio as `maybe_aspect_ratio: enums::common::generation::common_aspect_ratio::CommonAspectRatio`,\n    p.maybe_resolution as `maybe_resolution: enums::common::generation::common_resolution::CommonResolution`,\n    p.maybe_batch_count as `maybe_batch_count: u8`,\n    p.maybe_generate_audio as `maybe_generate_audio: bool`,\n    p.maybe_duration_seconds as `maybe_duration_seconds: u32`,\n\n    p.maybe_other_args,\n\n    p.creator_ip_address,\n    p.created_at\n\nFROM prompts as p\nWHERE\n    p.token = ?\n        ",
+  "query": "\nSELECT\n    p.token as `token: tokens::tokens::prompts::PromptToken`,\n\n    p.prompt_type as `prompt_type: enums::by_table::prompts::prompt_type::PromptType`,\n\n    p.maybe_model_type as `maybe_model_type: enums::common::generation::common_model_type::CommonModelType`,\n    p.maybe_generation_provider as `maybe_generation_provider: enums::common::generation_provider::GenerationProvider`,\n\n    p.maybe_creator_user_token as `maybe_creator_user_token: tokens::tokens::users::UserToken`,\n\n    p.maybe_positive_prompt,\n    p.maybe_negative_prompt,\n\n    p.maybe_generation_mode as `maybe_generation_mode: enums::common::generation::common_generation_mode::CommonGenerationMode`,\n    p.maybe_aspect_ratio as `maybe_aspect_ratio: enums::common::generation::common_aspect_ratio::CommonAspectRatio`,\n    p.maybe_resolution as `maybe_resolution: enums::common::generation::common_resolution::CommonResolution`,\n    p.maybe_bitrate as `maybe_bitrate: enums::common::generation::common_bitrate::CommonBitrate`,\n    p.maybe_batch_count as `maybe_batch_count: u8`,\n    p.maybe_generate_audio as `maybe_generate_audio: bool`,\n    p.maybe_duration_seconds as `maybe_duration_seconds: u32`,\n\n    p.maybe_other_args,\n\n    p.creator_ip_address,\n    p.created_at\n\nFROM prompts as p\nWHERE\n    p.token = ?\n        ",
   "describe": {
     "columns": [
       {
@@ -105,6 +105,16 @@
       },
       {
         "ordinal": 10,
+        "name": "maybe_bitrate: enums::common::generation::common_bitrate::CommonBitrate",
+        "type_info": {
+          "type": "VarString",
+          "flags": "BINARY",
+          "char_set": 224,
+          "max_size": 64
+        }
+      },
+      {
+        "ordinal": 11,
         "name": "maybe_batch_count: u8",
         "type_info": {
           "type": "Tiny",
@@ -114,7 +124,7 @@
         }
       },
       {
-        "ordinal": 11,
+        "ordinal": 12,
         "name": "maybe_generate_audio: bool",
         "type_info": {
           "type": "Tiny",
@@ -124,7 +134,7 @@
         }
       },
       {
-        "ordinal": 12,
+        "ordinal": 13,
         "name": "maybe_duration_seconds: u32",
         "type_info": {
           "type": "Long",
@@ -134,7 +144,7 @@
         }
       },
       {
-        "ordinal": 13,
+        "ordinal": 14,
         "name": "maybe_other_args",
         "type_info": {
           "type": "Blob",
@@ -144,7 +154,7 @@
         }
       },
       {
-        "ordinal": 14,
+        "ordinal": 15,
         "name": "creator_ip_address",
         "type_info": {
           "type": "VarString",
@@ -154,7 +164,7 @@
         }
       },
       {
-        "ordinal": 15,
+        "ordinal": 16,
         "name": "created_at",
         "type_info": {
           "type": "Timestamp",
@@ -182,9 +192,10 @@
       true,
       true,
       true,
+      true,
       false,
       false
     ]
   },
-  "hash": "4a50b7bf06061f05e769a41e547cb927bd2b3a6f67c8ceb37883b744237ba34c"
+  "hash": "1b69f192c3bb51bd249f97d37f209ae271d498bb46c978351b2c1d8759338bab"
 }
