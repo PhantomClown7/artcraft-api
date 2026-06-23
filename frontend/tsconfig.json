@@ -60,9 +60,9 @@
     {
       "path": "./apps/artcraft-webapp"
     },
-    {
-      "path": "./apps/artcraft-dashboard"
-    },
+    // {
+    //   "path": "./apps/artcraft-dashboard"
+    // },
     {
       "path": "./libs/components/gallery-modal"
     },
