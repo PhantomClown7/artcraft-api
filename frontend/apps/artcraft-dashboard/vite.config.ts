@@ -30,9 +30,12 @@ export default defineConfig(() => ({
   },
   plugins: [nxViteTsPaths(), react(), tailwindcss()],
   resolve: {
-    // Ensure a single copy of React is used across the monorepo's hoisted deps.
+    // Dedupe React to this app's own nested copy (React 19) so it doesn't
+    // collapse onto the workspace-hoisted React 18 used by the other apps.
     dedupe: ['react', 'react-dom'],
     alias: {
+      react: path.resolve(__dirname, './node_modules/react'),
+      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
       '@': path.resolve(__dirname, './src'),
     },
   },
