@@ -142,6 +142,9 @@ async fn walk_orders(
       .map(|job| (job.order_id.clone(), job))
       .collect();
 
+  let pending_db_job_count = job_by_order_id.len();
+
+  let iteration_start = Instant::now();
   let mut result = WalkResult::default();
   let mut cursor: Option<u64> = None;
   let mut pages_since_head_recheck: u32 = 0;
@@ -152,9 +155,25 @@ async fn walk_orders(
       break;
     }
 
+    // Log the iteration state up front (before the poll) so that, if the poll
+    // itself fails, we still have the surrounding context in the logs.
+    let iteration_elapsed = iteration_start.elapsed();
+
     info!(
-      "Requesting Kinovi page {} (cursor: {:?}, orders seen so far: {})",
-      result.pages_seen, cursor, result.orders_seen,
+      "Requesting Kinovi page:\n  \
+         page:                  {page}\n  \
+         cursor:                {cursor:?}\n  \
+         orders seen so far:    {orders_seen}\n  \
+         pending gDB jobs:       {pending}\n  \
+         reconciler backlog:    {backlog} order(s) awaiting processing\n  \
+         iteration elapsed:     {secs}s ({millis}ms)",
+      page = result.pages_seen,
+      cursor = cursor,
+      orders_seen = result.orders_seen,
+      pending = pending_db_job_count,
+      backlog = deps.order_reconciler.len(),
+      secs = iteration_elapsed.as_secs(),
+      millis = iteration_elapsed.as_millis(),
     );
 
     let response = poll_orders_with_retry(deps, cursor).await?;
