@@ -78,7 +78,7 @@ export function DashboardHome() {
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight flex items-center gap-3">
           <IconDashboard className="size-6 text-muted-foreground" />
-          Dashboard Overview
+          Artcraft Dashboard Overview
         </h1>
         <p className="text-muted-foreground">Welcome to the admin dashboard.</p>
       </div>
