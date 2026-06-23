@@ -1,31 +1,33 @@
 # Netlify configuration for the ArtCraft admin dashboard.
 #
-# This app is deliberately ISOLATED from the Nx/npm workspace. It pins its own
-# toolchain (React 19 + Vite 7 + Tailwind 4) and installs with pnpm into its own
-# node_modules — none of which is compatible with the rest of the workspace
-# (React 18.3.1 / npm). Keeping it self-contained is what prevents the
-# multi-minute install hangs we hit when it was a workspace member.
+# Set up the Netlify site exactly like the other apps in this workspace:
+#   * Base directory:  frontend            (the Nx workspace root)
+#   * Build command:   bash ./apps/artcraft-dashboard/script/netlify_build.sh
+#   * Publish dir:     apps/artcraft-dashboard/dist
 #
-# IMPORTANT — Netlify site settings:
-#   * Base directory:    frontend/apps/artcraft-dashboard
-#   * (leave Build command / Publish directory to this file)
+# (These match what's configured in the Netlify UI; paths are relative to the
+# `frontend` base directory.)
 #
-# With the base directory set to this folder, Netlify runs the whole build
-# *inside* this folder: it detects pnpm-lock.yaml, installs only this app's
-# dependencies with pnpm, and never touches the root npm workspace. Do NOT set
-# the base directory to `frontend/` (that was the old, broken setup that pulled
-# in the entire React-18 workspace).
+# REQUIRED env var (set in the Netlify UI → Site config → Environment):
+#   * NODE_VERSION = 22
+# Vite 7 (used by this app) requires Node >= 20.19 / 22.12, which is newer than
+# the rest of the workspace needs. The base directory is shared with the other
+# apps, so this can't be pinned via a committed .node-version without affecting
+# them — set it per-site in the UI instead. Netlify does not read this
+# netlify.toml at base `frontend`, so a [build.environment] block here would NOT
+# take effect; it must be a UI env var.
+#
+# The dashboard is deliberately ISOLATED from the Nx/npm workspace: it pins its
+# own React 19 + Vite 7 + Tailwind 4 toolchain and installs with pnpm. The build
+# script builds it standalone inside its own folder. Because the dashboard is
+# excluded from the root npm `workspaces` globs, Netlify's automatic
+# `npm install` at the base directory does NOT pull in its (incompatible) deps —
+# that's what prevents the multi-minute install hangs we saw when it was a
+# workspace member.
 
 [build]
-  # `pnpm build` is `tsc -b && vite build` (see package.json). Netlify enables
-  # pnpm via corepack from the `packageManager` field; the explicit install with
-  # a frozen lockfile keeps CI installs deterministic and fast.
-  command = "pnpm install --frozen-lockfile && pnpm build"
-  publish = "dist"
-
-[build.environment]
-  # The dashboard targets a modern Node; pin it so Netlify doesn't drift.
-  NODE_VERSION = "22"
+  command = "bash ./apps/artcraft-dashboard/script/netlify_build.sh"
+  publish = "apps/artcraft-dashboard/dist/"
 
 # Vite emits content-hashed assets under /assets/*, so they can be cached
 # forever — a new deploy produces new filenames.
