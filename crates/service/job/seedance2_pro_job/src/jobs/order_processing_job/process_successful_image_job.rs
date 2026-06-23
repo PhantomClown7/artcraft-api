@@ -14,7 +14,7 @@ use mysql_queries::queries::generic_inference::api_providers::seedance2pro::list
 use mysql_queries::queries::generic_inference::job::select_inference_job_status_for_update::select_inference_job_status_for_update;
 use mysql_queries::queries::generic_inference::web::mark_generic_inference_job_successfully_done_by_token_with_executor::{mark_generic_inference_job_successfully_done_by_token_with_executor, MarkGenericInferenceJobSuccessfullyDoneByTokenWithExecutorArgs};
 use mysql_queries::queries::media_files::create::insert_builder::media_file_insert_builder::MediaFileInsertBuilder;
-use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, VideoResult};
+use seedance2pro_client::requests::poll_orders::poll_orders::{OrderStatus, MediaResult};
 use tokens::tokens::batch_generations::BatchGenerationToken;
 use tokens::tokens::media_files::MediaFileToken;
 
@@ -175,7 +175,7 @@ async fn download_and_store_one_image(
   deps: &JobDependencies,
   job: &PendingSeedance2ProJob,
   order: &OrderStatus,
-  result: &VideoResult,
+  result: &MediaResult,
   index: usize,
   maybe_batch_token: Option<&BatchGenerationToken>,
 ) -> AnyhowResult<MediaFileToken> {
@@ -224,8 +224,8 @@ async fn download_and_store_one_image(
     .maybe_batch_generation_token(maybe_batch_token)
     .maybe_creator_anonymous_visitor(job.maybe_creator_anonymous_visitor_token.as_ref())
     .maybe_creator_user(job.maybe_creator_user_token.as_ref())
-    .maybe_frame_height(Some(result.height))
-    .maybe_frame_width(Some(result.width))
+    .maybe_frame_height(result.maybe_height)
+    .maybe_frame_width(result.maybe_width)
     .maybe_generation_provider(Some(GenerationProvider::Artcraft))
     .maybe_prompt_token(job.maybe_prompt_token.as_ref())
     .maybe_platform_type(job.maybe_platform_type)
