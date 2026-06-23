@@ -164,7 +164,7 @@ async fn walk_orders(
          page:                  {page}\n  \
          cursor:                {cursor:?}\n  \
          orders seen so far:    {orders_seen}\n  \
-         pending gDB jobs:       {pending}\n  \
+         pending DB jobs:       {pending}\n  \
          reconciler backlog:    {backlog} order(s) awaiting processing\n  \
          iteration elapsed:     {secs}s ({millis}ms)",
       page = result.pages_seen,
