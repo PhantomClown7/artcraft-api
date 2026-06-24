@@ -136,7 +136,7 @@ const LABEL_TO_BITRATE: Record<string, string> = Object.fromEntries(
 // UI-only — they are not in `_modelLookup`, so the click handler is a no-op
 // (the `disabled` flag also prevents the row from firing).
 const COMING_SOON_MODELS: ReadonlyArray<{ id: string; label: string }> = [
-  { id: "seedance_2p1", label: "Seedance 2.1" },
+  { id: "seedance_2p1", label: "Seedance 2.5" },
 ];
 
 let _modelLookup = new Map<string, OmniGenVideoModelInfo>();
@@ -405,8 +405,7 @@ export default function CreateVideo() {
   const hasSizeOptions = (selectedModel?.aspect_ratio_options?.length ?? 0) > 0;
   const hasResolutionOptions =
     (selectedModel?.resolution_options?.length ?? 0) > 0;
-  const hasBitrateOptions =
-    (selectedModel?.bitrate_options?.length ?? 0) > 0;
+  const hasBitrateOptions = (selectedModel?.bitrate_options?.length ?? 0) > 0;
   const hasSound = !!selectedModel?.show_generate_with_sound_toggle;
   const supportsImagePrompts =
     !!selectedModel?.starting_keyframe_supported ||

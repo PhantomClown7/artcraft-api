@@ -15,6 +15,7 @@ import {
   faCircleQuestion,
   faDownload,
   faGift,
+  faPencil,
 } from "@fortawesome/pro-solid-svg-icons";
 import { faDiscord } from "@fortawesome/free-brands-svg-icons";
 import { Button } from "@storyteller/ui-button";
@@ -56,7 +57,7 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
   { label: "Image", href: "/create-image", icon: faImage },
   { label: "Video", href: "/create-video", icon: faVideo },
   // Edit Image is hidden from the sidebar for now.
-  // { label: "Edit Image", href: "/edit-image", icon: faPencil },
+  { label: "Edit Image", href: "/edit-image", icon: faPencil },
   { label: "Edit 3D", href: "/edit-3d", icon: faCube },
   { label: "Edit Video", href: "/video-editor", icon: faFilm, badge: "BETA" },
   {
@@ -180,11 +181,7 @@ function NavMenuItem({
           }
         />
       )}
-      <SidebarMenuButton
-        asChild
-        isActive={active}
-        tooltip={item.label}
-      >
+      <SidebarMenuButton asChild isActive={active} tooltip={item.label}>
         {item.external ? (
           <a
             href={item.href}
