@@ -18,6 +18,7 @@ import CreateVFX from "../pages/create-vfx";
 import PageScene from "../pages/pagescene";
 import PageDraw from "../pages/pagedraw";
 import VideoEditorPage from "../pages/video-editor";
+import MoodboardPage from "../pages/moodboard";
 import Pricing from "../pages/pricing";
 import Support from "../pages/support/support";
 import Login from "../pages/login";
@@ -91,7 +92,7 @@ function ProtectedContent() {
       ? "var(--sidebar-width)"
       : "calc(var(--sidebar-width-icon) + 1.5rem)";
 
-  // The Edit 3D, Edit Image, and video editors host the header's actions
+  // The Edit 3D, video editor, and moodboard host the header's actions
   // (pricing/credits/task queue/profile) inside their own toolbar/header to
   // reclaim vertical space, so the global header is hidden there — desktop
   // only, since the mobile routes show the global chrome (Edit Image keeps the
@@ -102,7 +103,8 @@ function ProtectedContent() {
       pathname.startsWith("/edit-3d/") ||
       pathname === "/edit-image" ||
       pathname === "/video-editor" ||
-      pathname.startsWith("/video-editor/"));
+      pathname.startsWith("/video-editor/") ||
+      pathname === "/moodboard");
 
   return (
     <div
@@ -152,6 +154,7 @@ export function App() {
           <Route path="/create-image" element={<CreateImage />} />
           <Route path="/create-video" element={<CreateVideo />} />
           <Route path="/background-change" element={<CreateVFX />} />
+          <Route path="/moodboard" element={<MoodboardPage />} />
           <Route path="/edit-3d" element={<PageScene />} />
           <Route path="/edit-3d/:sceneToken" element={<PageScene />} />
           <Route path="/edit-image" element={<PageDraw />} />

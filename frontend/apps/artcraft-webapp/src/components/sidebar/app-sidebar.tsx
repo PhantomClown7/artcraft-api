@@ -8,6 +8,7 @@ import {
   faImage,
   faCube,
   faFilm,
+  faObjectGroup,
   faWandMagicSparkles,
   faGraduationCap,
   faNewspaper,
@@ -62,6 +63,12 @@ const CREATE_ITEMS_STATIC: NavItem[] = [
     label: "BG Change",
     href: "/background-change",
     icon: faWandMagicSparkles,
+  },
+  {
+    label: "Moodboard",
+    href: "/moodboard",
+    icon: faObjectGroup,
+    badge: "BETA",
   },
 ];
 
