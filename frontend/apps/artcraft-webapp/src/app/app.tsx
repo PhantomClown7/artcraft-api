@@ -36,6 +36,7 @@ import {
   useSidebar,
 } from "../components/ui/sidebar";
 import { AppSidebar } from "../components/sidebar/app-sidebar";
+import { PageTransition } from "../components/motion/page-transition";
 import { MobileBottomNav } from "../components/sidebar/mobile-bottom-nav";
 import { TopBar } from "../components/topbar/topbar";
 import { SignupCtaModal } from "../components/signup-cta-modal";
@@ -109,15 +110,10 @@ function ProtectedContent() {
       style={{ "--ac-sidebar-offset": sidebarOffset } as React.CSSProperties}
     >
       {!hideTopBar && <TopBar />}
-      {/* The immersive editors (hideTopBar routes) paint their own #101014
-          canvas backdrop; match the inset to it so no lighter strip shows at
-          the edges. Other pages keep the standard #121212 surface. */}
-      <SidebarInset
-        className={`flex-1 min-h-0 overflow-y-auto ${
-          hideTopBar ? "bg-[#101014]" : "bg-[#121212]"
-        }`}
-      >
-        <Outlet />
+      <SidebarInset className="flex-1 min-h-0 overflow-y-auto bg-[#121212]">
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
       </SidebarInset>
       {isMobile && <MobileBottomNav />}
     </div>
