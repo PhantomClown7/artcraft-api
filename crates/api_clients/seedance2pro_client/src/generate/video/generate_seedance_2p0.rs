@@ -54,6 +54,7 @@ pub enum KinoviSeedance2p0OutputResolution {
   FourEightyP,
   SevenTwentyP,
   TenEightyP,
+  FourK,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -77,6 +78,7 @@ pub enum KinoviSeedance2p0Bitrate {
 // | 480p       |          15 |
 // | 720p       |          40 |
 // | 1080p      |          90 |
+// | 4K         |         200 |
 //
 // Default resolution (None) is 720p.
 // Batch count multiplies the total cost.
@@ -93,6 +95,7 @@ impl GenerateSeedance2p0Request {
       Some(KinoviSeedance2p0OutputResolution::FourEightyP) => 15,
       Some(KinoviSeedance2p0OutputResolution::SevenTwentyP) | None => 40,
       Some(KinoviSeedance2p0OutputResolution::TenEightyP) => 90,
+      Some(KinoviSeedance2p0OutputResolution::FourK) => 200,
     };
 
     // Video-reference surcharge, billed per second of OUTPUT duration
@@ -103,6 +106,7 @@ impl GenerateSeedance2p0Request {
     // | 480p       |                     4 |
     // | 720p       |                     8 |
     // | 1080p      |                    18 |
+    // | 4K         |                    40 |
     //
     // NB: Assumed flat per generation regardless of how many reference
     // videos are attached (Kinovi's pricing page only shows one).
@@ -111,6 +115,7 @@ impl GenerateSeedance2p0Request {
         Some(KinoviSeedance2p0OutputResolution::FourEightyP) => 4,
         Some(KinoviSeedance2p0OutputResolution::SevenTwentyP) | None => 8,
         Some(KinoviSeedance2p0OutputResolution::TenEightyP) => 18,
+        Some(KinoviSeedance2p0OutputResolution::FourK) => 40,
       }
     } else {
       0
@@ -222,6 +227,7 @@ fn map_output_resolution(res: KinoviSeedance2p0OutputResolution) -> KinoviOutput
     KinoviSeedance2p0OutputResolution::FourEightyP => KinoviOutputResolutionRaw::FourEightyP,
     KinoviSeedance2p0OutputResolution::SevenTwentyP => KinoviOutputResolutionRaw::SevenTwentyP,
     KinoviSeedance2p0OutputResolution::TenEightyP => KinoviOutputResolutionRaw::TenEightyP,
+    KinoviSeedance2p0OutputResolution::FourK => KinoviOutputResolutionRaw::FourK,
   }
 }
 
@@ -286,6 +292,89 @@ mod tests {
 
     fn r1080(dur: u8) -> GenerateSeedance2p0Request {
       build_request(dur, Some(KinoviSeedance2p0OutputResolution::TenEightyP), None)
+    }
+
+    /// A 4K request with NO video reference.
+    fn r4k(dur: u8) -> GenerateSeedance2p0Request {
+      build_request(dur, Some(KinoviSeedance2p0OutputResolution::FourK), None)
+    }
+
+    /// A 4K request WITH a video reference (adds the per-second surcharge).
+    fn r4k_with_video_ref(dur: u8) -> GenerateSeedance2p0Request {
+      let mut request = r4k(dur);
+      request.reference_video_urls = Some(vec!["https://example.com/ref.mp4".to_string()]);
+      request
+    }
+
+    fn total_credits(request: &GenerateSeedance2p0Request) -> u64 {
+      request.calculate_costs().total_cost.kinovi_credits
+    }
+
+    // ── 4K pricing (Seedance 2.0 only) ──
+    //
+    // Base: 200 credits/sec. With a video reference: 240 credits/sec
+    // (200 base + 40/sec surcharge). Every duration × video-ref combination
+    // is asserted below against Kinovi's published 4K numbers.
+
+    mod four_k_pricing {
+      use super::*;
+
+      // ── No video reference: 200 credits/sec ──
+
+      #[test]
+      fn four_k_no_video_ref_4_seconds_is_800_credits() {
+        assert_eq!(total_credits(&r4k(4)), 800);
+      }
+
+      #[test]
+      fn four_k_no_video_ref_5_seconds_is_1000_credits() {
+        assert_eq!(total_credits(&r4k(5)), 1000);
+      }
+
+      #[test]
+      fn four_k_no_video_ref_10_seconds_is_2000_credits() {
+        assert_eq!(total_credits(&r4k(10)), 2000);
+      }
+
+      #[test]
+      fn four_k_no_video_ref_15_seconds_is_3000_credits() {
+        assert_eq!(total_credits(&r4k(15)), 3000);
+      }
+
+      // ── With video reference: 240 credits/sec (200 base + 40 surcharge) ──
+
+      #[test]
+      fn four_k_with_video_ref_4_seconds_is_960_credits() {
+        assert_eq!(total_credits(&r4k_with_video_ref(4)), 960);
+      }
+
+      #[test]
+      fn four_k_with_video_ref_5_seconds_is_1200_credits() {
+        assert_eq!(total_credits(&r4k_with_video_ref(5)), 1200);
+      }
+
+      #[test]
+      fn four_k_with_video_ref_10_seconds_is_2400_credits() {
+        assert_eq!(total_credits(&r4k_with_video_ref(10)), 2400);
+      }
+
+      #[test]
+      fn four_k_with_video_ref_15_seconds_is_3600_credits() {
+        assert_eq!(total_credits(&r4k_with_video_ref(15)), 3600);
+      }
+
+      // ── Base / surcharge breakdown (5 seconds) ──
+
+      #[test]
+      fn four_k_with_video_ref_breaks_base_and_surcharge_apart() {
+        let costs = r4k_with_video_ref(5).calculate_costs();
+        assert_eq!(costs.base_cost.kinovi_credits, 1000); // 5s × 200
+        assert_eq!(
+          costs.video_reference_surcharge_cost.as_ref().map(|c| c.kinovi_credits),
+          Some(200), // 5s × 40
+        );
+        assert_eq!(costs.total_cost.kinovi_credits, 1200);
+      }
     }
 
     // ── Comprehensive per-resolution coverage ──
@@ -1091,6 +1180,42 @@ mod tests {
       println!("image ref — task_id={}, order_id={}", result.task_id, result.order_id);
       assert!(!result.task_id.is_empty());
       assert_eq!(1, 2);
+      Ok(())
+    }
+
+    /// 4K with image references (Seedance 2.0 only), 5-second clip.
+    #[tokio::test]
+    #[ignore]
+    async fn test_4k_image_references() -> AnyhowResult<()> {
+      setup_test_logging(LevelFilter::Trace);
+      let session = test_session()?;
+      let img1 = upload_test_image(&session, test_data::web::image_urls::JUNO_AT_LAKE_IMAGE_URL).await?;
+      let img2 = upload_test_image(&session, test_data::web::image_urls::ERNEST_SCARED_STUPID_IMAGE_URL).await?;
+      let img3 = upload_test_image(&session, test_data::web::image_urls::FOREST_BACKDROP_IMAGE_URL).await?;
+
+      let result = generate_seedance_2p0(GenerateSeedance2p0Args {
+        session: &session,
+        host_override: None,
+        request: GenerateSeedance2p0Request {
+          prompt: "The dog in @1 explores the scenery in @3 and meets the friendly man in @2. Cinematic 4K detail.".to_string(),
+          aspect_ratio: Some(KinoviSeedance2p0AspectRatio::Landscape16x9),
+          output_resolution: Some(KinoviSeedance2p0OutputResolution::FourK),
+          batch_count: None,
+          duration_seconds: 5,
+          start_frame_url: None,
+          end_frame_url: None,
+          reference_image_urls: Some(vec![img1, img2, img3]),
+          reference_video_urls: None,
+          reference_audio_urls: None,
+          character_ids: None,
+          use_face_blur_hack: None,
+          bitrate: None,
+        },
+      }).await?;
+      println!("4K image ref — task_id={}, order_id={}", result.task_id, result.order_id);
+      assert!(!result.task_id.is_empty());
+      assert!(!result.order_id.is_empty());
+      assert_eq!(1, 2, "Inspect output above");
       Ok(())
     }
   }
