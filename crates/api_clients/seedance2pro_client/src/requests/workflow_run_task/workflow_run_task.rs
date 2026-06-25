@@ -125,14 +125,16 @@ pub enum KinoviAspectRatioRaw {
 }
 
 impl KinoviAspectRatioRaw {
-  fn as_str(&self) -> &'static str {
+  /// The aspect ratio as a ratio string (e.g. "16:9"), used by models that
+  /// send an `aspectRatio` field (Seedance 2.0 Mini) instead of `resolution`.
+  fn as_aspect_ratio_str(&self) -> &'static str {
     match self {
-      Self::Landscape16x9 => "1280x720",
-      Self::UltraWide21x9 => "1280x540",
-      Self::Portrait9x16 => "720x1280",
-      Self::Square1x1 => "720x720",
-      Self::Landscape4x3 => "960x720",
-      Self::Portrait3x4 => "720x960",
+      Self::Landscape16x9 => "16:9",
+      Self::UltraWide21x9 => "21:9",
+      Self::Portrait9x16 => "9:16",
+      Self::Square1x1 => "1:1",
+      Self::Landscape4x3 => "4:3",
+      Self::Portrait3x4 => "3:4",
     }
   }
 }
@@ -169,7 +171,12 @@ impl KinoviOutputResolutionRaw {
 pub enum KinoviBatchCountRaw {
   One,
   Two,
+  Three,
   Four,
+  Five,
+  Six,
+  Seven,
+  Eight,
 }
 
 impl KinoviBatchCountRaw {
@@ -177,7 +184,12 @@ impl KinoviBatchCountRaw {
     match self {
       Self::One => 1,
       Self::Two => 2,
+      Self::Three => 3,
       Self::Four => 4,
+      Self::Five => 5,
+      Self::Six => 6,
+      Self::Seven => 7,
+      Self::Eight => 8,
     }
   }
 }
@@ -189,6 +201,8 @@ pub enum KinoviModelTypeRaw {
   Seedance2Pro,
   /// Seedance 2.0 Fast (lower quality, faster).
   Seedance2Fast,
+  /// Seedance 2.0 Mini (cheapest; 480p/720p only).
+  Seedance2Mini,
   /// Happy Horse 1.0.
   HappyHorse1p0,
 }
@@ -198,8 +212,31 @@ impl KinoviModelTypeRaw {
     match self {
       Self::Seedance2Pro => "seedance-20",
       Self::Seedance2Fast => "seedance2-fast",
+      Self::Seedance2Mini => "seedance2.0-mini",
       Self::HappyHorse1p0 => "happyhorse1.0",
     }
+  }
+
+  /// The tRPC `businessType` for this model. Seedance 2.0 Mini uses its
+  /// own business type; every other model uses the shared one.
+  fn business_type(&self) -> &'static str {
+    match self {
+      Self::Seedance2Mini => "seedance20-mini-video-generation",
+      Self::HappyHorse1p0 => "happyhorse-video-generation",
+      Self::Seedance2Pro | Self::Seedance2Fast => "wan22-video-generation",
+    }
+  }
+
+  /// Whether the aspect ratio is sent in an `aspectRatio` field (true)
+  /// rather than the `resolution` field. Mini and Happy Horse use `aspectRatio`.
+  fn uses_aspect_ratio_field(&self) -> bool {
+    matches!(self, Self::Seedance2Mini | Self::HappyHorse1p0)
+  }
+
+  /// Whether this model uses Happy Horse's `happyhorseMode` (t2v/i2v)
+  /// instead of the standard `mode` (keyframe/reference).
+  fn uses_happyhorse_mode(&self) -> bool {
+    matches!(self, Self::HappyHorse1p0)
   }
 }
 
@@ -245,79 +282,7 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
 
   info!("Requesting video from Seedance2Pro (v2): {:?}", req);
 
-  let has_reference_images = req.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
-  let has_reference_videos = req.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
-  let has_reference_audio = req.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
-  let has_characters = req.character_ids.as_ref().is_some_and(|ids| !ids.is_empty());
-
-  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio || has_characters;
-
-  let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
-
-  let uploaded_urls: Option<Vec<String>> = if is_reference_mode {
-    let mut urls = Vec::new();
-    if let Some(video_urls) = req.reference_video_urls {
-      urls.extend(video_urls);
-    }
-    if let Some(image_urls) = req.reference_image_urls {
-      urls.extend(image_urls);
-    }
-    if urls.is_empty() { None } else { Some(urls) }
-  } else {
-    let mut urls = Vec::new();
-    if let Some(url) = req.start_frame_url {
-      urls.push(url);
-    }
-    if let Some(url) = req.end_frame_url {
-      urls.push(url);
-    }
-    if urls.is_empty() { None } else { Some(urls) }
-  };
-
-  let audio_urls: Option<Vec<String>> = if has_reference_audio {
-    req.reference_audio_urls
-  } else {
-    None
-  };
-
-  let face_blur_mode = match req.use_face_blur_hack {
-    Some(true) => Some("on"),
-    Some(false) => Some("off"),
-    None => None,
-  };
-
-  let batch_count_value = req.batch_count.as_u8();
-  let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
-
-  let duration = format!("{}s", req.duration_seconds);
-
-  info!(
-    "Generating video (v2): mode={}, resolution={}, duration={}, batch={}",
-    video_input_mode, req.aspect_ratio.as_str(), duration, batch_count_value
-  );
-
-  let request_body = BatchRequest {
-    zero: BatchRequestInner {
-      json: BatchRequestJson {
-        business_type: "wan22-video-generation",
-        api_params: ApiParams {
-          prompt: req.prompt,
-          resolution: req.aspect_ratio.as_str().to_string(),
-          content_mode: "normal",
-          model: req.model_type.as_api_str(),
-          duration,
-          mode: video_input_mode,
-          output_resolution: req.output_resolution.and_then(|r| r.as_api_str()),
-          face_blur_mode,
-          character_ids: req.character_ids,
-          uploaded_urls,
-          audio_urls,
-          batch_count,
-          bitrate_mode: req.bitrate.and_then(|bitrate| bitrate.as_api_str()),
-        },
-      },
-    },
-  };
+  let request_body = build_batch_request(req);
 
   info!("Seedance2pro request (v2): {:?}", request_body);
 
@@ -388,6 +353,107 @@ pub async fn workflow_run_task(args: WorkflowRunTaskArgs<'_>) -> Result<Workflow
   })
 }
 
+/// Build the tRPC request body for a workflow run-task call.
+///
+/// Most models carry the aspect ratio as pixel dimensions in `resolution`.
+/// Seedance 2.0 Mini instead sends a ratio string in an `aspectRatio` field
+/// and a different `businessType`.
+fn build_batch_request(req: WorkflowRunTaskRequest) -> BatchRequest {
+  let has_reference_images = req.reference_image_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_reference_videos = req.reference_video_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_reference_audio = req.reference_audio_urls.as_ref().is_some_and(|urls| !urls.is_empty());
+  let has_characters = req.character_ids.as_ref().is_some_and(|ids| !ids.is_empty());
+
+  let is_reference_mode = has_reference_images || has_reference_videos || has_reference_audio || has_characters;
+
+  let video_input_mode = if is_reference_mode { "reference" } else { "keyframe" };
+
+  let uploaded_urls: Option<Vec<String>> = if is_reference_mode {
+    let mut urls = Vec::new();
+    if let Some(video_urls) = req.reference_video_urls {
+      urls.extend(video_urls);
+    }
+    if let Some(image_urls) = req.reference_image_urls {
+      urls.extend(image_urls);
+    }
+    if urls.is_empty() { None } else { Some(urls) }
+  } else {
+    let mut urls = Vec::new();
+    if let Some(url) = req.start_frame_url {
+      urls.push(url);
+    }
+    if let Some(url) = req.end_frame_url {
+      urls.push(url);
+    }
+    if urls.is_empty() { None } else { Some(urls) }
+  };
+
+  let audio_urls: Option<Vec<String>> = if has_reference_audio {
+    req.reference_audio_urls
+  } else {
+    None
+  };
+
+  let face_blur_mode = match req.use_face_blur_hack {
+    Some(true) => Some("on"),
+    Some(false) => Some("off"),
+    None => None,
+  };
+
+  let batch_count_value = req.batch_count.as_u8();
+  let batch_count = if batch_count_value > 1 { Some(batch_count_value) } else { None };
+
+  let duration = format!("{}s", req.duration_seconds);
+
+  // The aspect ratio is sent as a ratio string (e.g. "16:9"). Seedance Pro/Fast
+  // carry it in the `resolution` field; Mini and Happy Horse use `aspectRatio`.
+  let aspect_ratio_value = req.aspect_ratio.as_aspect_ratio_str();
+  let (resolution, aspect_ratio) = if req.model_type.uses_aspect_ratio_field() {
+    (None, Some(aspect_ratio_value))
+  } else {
+    (Some(aspect_ratio_value.to_string()), None)
+  };
+
+  // Happy Horse uses `happyhorseMode` (t2v/i2v) instead of the standard `mode`
+  // (keyframe/reference). i2v applies whenever an input image/video is attached.
+  let (mode, happyhorse_mode) = if req.model_type.uses_happyhorse_mode() {
+    let hh = if uploaded_urls.is_some() { "i2v" } else { "t2v" };
+    (None, Some(hh))
+  } else {
+    (Some(video_input_mode), None)
+  };
+
+  info!(
+    "Generating video (v2): mode={}, model={}, duration={}, batch={}",
+    video_input_mode, req.model_type.as_api_str(), duration, batch_count_value
+  );
+
+  BatchRequest {
+    zero: BatchRequestInner {
+      json: BatchRequestJson {
+        business_type: req.model_type.business_type(),
+        api_params: ApiParams {
+          prompt: req.prompt,
+          resolution,
+          aspect_ratio,
+          content_mode: "normal",
+          model: req.model_type.as_api_str(),
+          duration,
+          mode,
+          happyhorse_mode,
+          output_resolution: req.output_resolution.and_then(|r| r.as_api_str()),
+          face_blur_mode,
+          character_ids: req.character_ids,
+          uploaded_urls,
+          audio_urls,
+          batch_count,
+          bitrate_mode: req.bitrate.and_then(|bitrate| bitrate.as_api_str()),
+        },
+      },
+    },
+  }
+}
+
 #[cfg(test)]
 mod tests {
   use std::fs;
@@ -427,11 +493,13 @@ mod tests {
     fn base_api_params(bitrate_mode: Option<&'static str>) -> ApiParams {
       ApiParams {
         prompt: "a corgi".to_string(),
-        resolution: "1280x720".to_string(),
+        resolution: Some("16:9".to_string()),
+        aspect_ratio: None,
         content_mode: "normal",
         model: "seedance-20",
         duration: "5s".to_string(),
-        mode: "keyframe",
+        mode: Some("keyframe"),
+        happyhorse_mode: None,
         output_resolution: None,
         face_blur_mode: None,
         character_ids: None,
@@ -474,11 +542,13 @@ mod tests {
     fn base_api_params(output_resolution: Option<&'static str>) -> ApiParams {
       ApiParams {
         prompt: "a corgi".to_string(),
-        resolution: "1280x720".to_string(),
+        resolution: Some("16:9".to_string()),
+        aspect_ratio: None,
         content_mode: "normal",
         model: "seedance-20",
         duration: "5s".to_string(),
-        mode: "reference",
+        mode: Some("reference"),
+        happyhorse_mode: None,
         output_resolution,
         face_blur_mode: None,
         character_ids: None,
@@ -487,6 +557,197 @@ mod tests {
         batch_count: None,
         bitrate_mode: None,
       }
+    }
+  }
+
+  // ── Seedance 2.0 Mini request shape ──
+  //
+  // Mini differs from the other models on the wire: a
+  // `seedance20-mini-video-generation` businessType, a `seedance2.0-mini`
+  // model, and an `aspectRatio` ratio string (e.g. "16:9") in place of the
+  // pixel-dimension `resolution` field.
+
+  mod mini_request_shape_tests {
+    use super::*;
+
+    fn mini_request(
+      aspect_ratio: KinoviAspectRatioRaw,
+      output_resolution: Option<KinoviOutputResolutionRaw>,
+      batch_count: KinoviBatchCountRaw,
+    ) -> WorkflowRunTaskRequest {
+      WorkflowRunTaskRequest {
+        model_type: KinoviModelTypeRaw::Seedance2Mini,
+        prompt: "a corgi".to_string(),
+        aspect_ratio,
+        output_resolution,
+        duration_seconds: 5,
+        batch_count,
+        start_frame_url: None,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        character_ids: None,
+        use_face_blur_hack: None,
+        bitrate: None,
+      }
+    }
+
+    #[test]
+    fn mini_uses_aspect_ratio_field_and_business_type() {
+      let body = build_batch_request(mini_request(
+        KinoviAspectRatioRaw::Landscape4x3,
+        Some(KinoviOutputResolutionRaw::FourEightyP),
+        KinoviBatchCountRaw::One,
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"seedance20-mini-video-generation""#), "{json}");
+      assert!(json.contains(r#""model":"seedance2.0-mini""#), "{json}");
+      assert!(json.contains(r#""aspectRatio":"4:3""#), "{json}");
+      assert!(json.contains(r#""outputResolution":"480p""#), "{json}");
+      // Mini does NOT send the pixel-dimension `resolution` field.
+      assert!(!json.contains(r#""resolution":"#), "{json}");
+    }
+
+    #[test]
+    fn mini_720p_omits_output_resolution() {
+      let body = build_batch_request(mini_request(
+        KinoviAspectRatioRaw::Landscape16x9,
+        None,
+        KinoviBatchCountRaw::One,
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""aspectRatio":"16:9""#), "{json}");
+      assert!(!json.contains("outputResolution"), "{json}");
+    }
+
+    #[test]
+    fn mini_batch_count_eight_serializes() {
+      let body = build_batch_request(mini_request(
+        KinoviAspectRatioRaw::Landscape16x9,
+        None,
+        KinoviBatchCountRaw::Eight,
+      ));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""batchCount":8"#), "{json}");
+    }
+
+    #[test]
+    fn non_mini_still_uses_resolution_field() {
+      let mut req = mini_request(KinoviAspectRatioRaw::Landscape16x9, None, KinoviBatchCountRaw::One);
+      req.model_type = KinoviModelTypeRaw::Seedance2Pro;
+      let body = build_batch_request(req);
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"wan22-video-generation""#), "{json}");
+      assert!(json.contains(r#""resolution":"16:9""#), "{json}");
+      assert!(!json.contains("aspectRatio"), "{json}");
+    }
+
+    #[test]
+    fn model_strings_and_business_types() {
+      assert_eq!(KinoviModelTypeRaw::Seedance2Mini.as_api_str(), "seedance2.0-mini");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Mini.business_type(), "seedance20-mini-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Pro.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Fast.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::HappyHorse1p0.business_type(), "happyhorse-video-generation");
+    }
+
+    #[test]
+    fn aspect_ratio_strings() {
+      assert_eq!(KinoviAspectRatioRaw::Landscape16x9.as_aspect_ratio_str(), "16:9");
+      assert_eq!(KinoviAspectRatioRaw::UltraWide21x9.as_aspect_ratio_str(), "21:9");
+      assert_eq!(KinoviAspectRatioRaw::Portrait9x16.as_aspect_ratio_str(), "9:16");
+      assert_eq!(KinoviAspectRatioRaw::Square1x1.as_aspect_ratio_str(), "1:1");
+      assert_eq!(KinoviAspectRatioRaw::Landscape4x3.as_aspect_ratio_str(), "4:3");
+      assert_eq!(KinoviAspectRatioRaw::Portrait3x4.as_aspect_ratio_str(), "3:4");
+    }
+  }
+
+  // ── 2026-06-24 request-shape change ──
+  //
+  // The aspect ratio is now a ratio string ("16:9"). Seedance Pro/Fast keep it
+  // in `resolution`; Happy Horse moved to its own `businessType`, an
+  // `aspectRatio` field, and a `happyhorseMode` (t2v/i2v) in place of `mode`.
+
+  mod wire_shape_change_tests {
+    use super::*;
+
+    fn request(
+      model_type: KinoviModelTypeRaw,
+      aspect_ratio: KinoviAspectRatioRaw,
+      start_frame_url: Option<String>,
+    ) -> WorkflowRunTaskRequest {
+      WorkflowRunTaskRequest {
+        model_type,
+        prompt: "a corgi".to_string(),
+        aspect_ratio,
+        output_resolution: None,
+        duration_seconds: 5,
+        batch_count: KinoviBatchCountRaw::One,
+        start_frame_url,
+        end_frame_url: None,
+        reference_image_urls: None,
+        reference_video_urls: None,
+        reference_audio_urls: None,
+        character_ids: None,
+        use_face_blur_hack: None,
+        bitrate: None,
+      }
+    }
+
+    #[test]
+    fn seedance_pro_resolution_is_a_ratio_string() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::Seedance2Pro, KinoviAspectRatioRaw::Landscape16x9, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"wan22-video-generation""#), "{json}");
+      assert!(json.contains(r#""resolution":"16:9""#), "{json}");
+      assert!(json.contains(r#""mode":"keyframe""#), "{json}");
+      assert!(!json.contains("aspectRatio"), "{json}");
+      assert!(!json.contains("1280x720"), "{json}");
+      assert!(!json.contains("happyhorseMode"), "{json}");
+    }
+
+    #[test]
+    fn seedance_fast_resolution_is_a_ratio_string() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::Seedance2Fast, KinoviAspectRatioRaw::Portrait3x4, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""model":"seedance2-fast""#), "{json}");
+      assert!(json.contains(r#""resolution":"3:4""#), "{json}");
+    }
+
+    #[test]
+    fn happy_horse_text_to_video_shape() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::HappyHorse1p0, KinoviAspectRatioRaw::Portrait9x16, None));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""businessType":"happyhorse-video-generation""#), "{json}");
+      assert!(json.contains(r#""model":"happyhorse1.0""#), "{json}");
+      assert!(json.contains(r#""happyhorseMode":"t2v""#), "{json}");
+      assert!(json.contains(r#""aspectRatio":"9:16""#), "{json}");
+      // Happy Horse omits the standard `mode` and the `resolution` field.
+      assert!(!json.contains(r#""mode":"#), "{json}");
+      assert!(!json.contains(r#""resolution":"#), "{json}");
+    }
+
+    #[test]
+    fn happy_horse_image_to_video_uses_i2v() {
+      let body = build_batch_request(request(
+        KinoviModelTypeRaw::HappyHorse1p0, KinoviAspectRatioRaw::Landscape16x9,
+        Some("https://example.com/start.png".to_string())));
+      let json = serde_json::to_string(&body).unwrap();
+      assert!(json.contains(r#""happyhorseMode":"i2v""#), "{json}");
+      assert!(json.contains(r#""uploadedUrls":["https://example.com/start.png"]"#), "{json}");
+      assert!(!json.contains(r#""mode":"#), "{json}");
+    }
+
+    #[test]
+    fn business_types() {
+      assert_eq!(KinoviModelTypeRaw::Seedance2Pro.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Fast.business_type(), "wan22-video-generation");
+      assert_eq!(KinoviModelTypeRaw::Seedance2Mini.business_type(), "seedance20-mini-video-generation");
+      assert_eq!(KinoviModelTypeRaw::HappyHorse1p0.business_type(), "happyhorse-video-generation");
     }
   }
 
