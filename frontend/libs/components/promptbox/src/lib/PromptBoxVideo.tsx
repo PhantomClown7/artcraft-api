@@ -967,6 +967,72 @@ export const PromptBoxVideo = ({
     }
   }, [selectedModel, endFrameImage, setEndFrameImage]);
 
+  // Shared reference-image row. Inline it floats above the box (default absolute
+  // positioning); the fullscreen modal passes a className to reset that so it
+  // sits in-flow above the controls with rounded corners.
+  const renderImagePromptRow = (className?: string) => (
+    <ImagePromptRow
+      visible={true}
+      isVideo={true}
+      isReferenceMode={isReferenceMode}
+      maxImagePromptCount={maxImageCount}
+      allowUpload={true}
+      referenceImages={referenceImages}
+      setReferenceImages={setReferenceImages}
+      onImageClick={(image) => {
+        setContent(
+          <img
+            src={image.url}
+            alt="Reference preview"
+            className="h-full w-full object-contain"
+          />,
+        );
+        setIsModalOpen(true);
+      }}
+      uploadImage={uploadImage}
+      endFrameImage={isReferenceMode ? undefined : endFrameImage}
+      setEndFrameImage={isReferenceMode ? undefined : setEndFrameImage}
+      allowUploadEnd={!isReferenceMode && !!selectedModel?.endFrame}
+      showEndFrameSection={!isReferenceMode && !!selectedModel?.endFrame}
+      referenceVideos={isReferenceMode ? referenceVideos : undefined}
+      setReferenceVideos={isReferenceMode ? setReferenceVideos : undefined}
+      maxVideoCount={selectedModel?.maxReferenceVideos ?? 3}
+      maxVideoRefDuration={selectedModel?.maxVideoRefDuration ?? 15}
+      showVideoReferenceSection={isReferenceMode}
+      uploadVideo={uploadVideo}
+      referenceAudios={isReferenceMode ? referenceAudios : undefined}
+      setReferenceAudios={isReferenceMode ? setReferenceAudios : undefined}
+      maxAudioCount={selectedModel?.maxReferenceAudios ?? 2}
+      maxAudioRefDuration={selectedModel?.maxAudioRefDuration ?? 15}
+      uploadAudio={uploadAudio}
+      className={className}
+    />
+  );
+
+  // Character button (seedance_2p0 only), reused in the fullscreen footer.
+  const characterButtonEl =
+    selectedModel?.id === "seedance_2p0" ? (
+      <button
+        type="button"
+        onClick={() => setIsCharactersModalOpen(true)}
+        className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
+      >
+        @Characters
+      </button>
+    ) : null;
+
+  // Input-mode (keyframe/reference) picker, reused in the fullscreen footer.
+  const inputModeEl = inputModeOptions ? (
+    <Tooltip content="Input Mode" position="top" className="z-50" closeOnClick>
+      <PopoverMenu
+        items={inputModeOptions}
+        onSelect={handleInputModeSelect}
+        mode="toggle"
+        panelTitle="Input Mode"
+      />
+    </Tooltip>
+  ) : null;
+
   return (
     <>
       <Modal
@@ -979,47 +1045,7 @@ export const PromptBoxVideo = ({
         {content}
       </Modal>
       <div className="relative z-20 flex flex-col gap-3">
-        {isImageRowVisible && (
-          <ImagePromptRow
-            visible={true}
-            isVideo={true}
-            isReferenceMode={isReferenceMode}
-            maxImagePromptCount={maxImageCount}
-            allowUpload={true}
-            referenceImages={referenceImages}
-            setReferenceImages={setReferenceImages}
-            onImageClick={(image) => {
-              setContent(
-                <img
-                  src={image.url}
-                  alt="Reference preview"
-                  className="h-full w-full object-contain"
-                />,
-              );
-              setIsModalOpen(true);
-            }}
-            uploadImage={uploadImage}
-            endFrameImage={isReferenceMode ? undefined : endFrameImage}
-            setEndFrameImage={isReferenceMode ? undefined : setEndFrameImage}
-            allowUploadEnd={!isReferenceMode && !!selectedModel?.endFrame}
-            showEndFrameSection={!isReferenceMode && !!selectedModel?.endFrame}
-            referenceVideos={isReferenceMode ? referenceVideos : undefined}
-            setReferenceVideos={
-              isReferenceMode ? setReferenceVideos : undefined
-            }
-            maxVideoCount={selectedModel?.maxReferenceVideos ?? 3}
-            maxVideoRefDuration={selectedModel?.maxVideoRefDuration ?? 15}
-            showVideoReferenceSection={isReferenceMode}
-            uploadVideo={uploadVideo}
-            referenceAudios={isReferenceMode ? referenceAudios : undefined}
-            setReferenceAudios={
-              isReferenceMode ? setReferenceAudios : undefined
-            }
-            maxAudioCount={selectedModel?.maxReferenceAudios ?? 2}
-            maxAudioRefDuration={selectedModel?.maxAudioRefDuration ?? 15}
-            uploadAudio={uploadAudio}
-          />
-        )}
+        {isImageRowVisible && renderImagePromptRow()}
         <div
           className={twMerge(
             "glass relative w-full rounded-2xl p-4",
@@ -1184,31 +1210,9 @@ export const PromptBoxVideo = ({
                 </Tooltip>
               )}
 
-              {inputModeOptions && (
-                <Tooltip
-                  content="Input Mode"
-                  position="top"
-                  className="z-50"
-                  closeOnClick={true}
-                >
-                  <PopoverMenu
-                    items={inputModeOptions}
-                    onSelect={handleInputModeSelect}
-                    mode="toggle"
-                    panelTitle="Input Mode"
-                  />
-                </Tooltip>
-              )}
+              {inputModeEl}
 
-              {selectedModel?.id === "seedance_2p0" && (
-                <button
-                  type="button"
-                  onClick={() => setIsCharactersModalOpen(true)}
-                  className="flex h-9 items-center justify-center gap-1 rounded-lg border border-ui-controls-border bg-ui-controls px-3 text-sm font-medium text-base-fg transition-all duration-150 hover:bg-ui-controls/80 active:scale-95"
-                >
-                  @Characters
-                </button>
-              )}
+              {characterButtonEl}
             </div>
             <div className="flex items-center gap-2">
               {modelNeedsAnImageButNoneAreSelected && (
@@ -1336,6 +1340,14 @@ export const PromptBoxVideo = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        footerControls={
+          <>
+            {modelSelector}
+            {inputModeEl}
+            {characterButtonEl}
+          </>
+        }
+        imagePromptRow={renderImagePromptRow("relative top-auto rounded-2xl")}
       >
         {hasAnyMentionables ? (
           <MentionTextarea
@@ -1348,12 +1360,13 @@ export const PromptBoxVideo = ({
                 ? "Use @Image1, @Video1, @Audio1... to reference uploads in prompt..."
                 : "Describe what you want to happen in the video..."
             }
-            className="promptbox-scrollbar text-md h-full w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg"
+            style={{ resize: "none" }}
           />
         ) : (
           <textarea
             placeholder="Describe what you want to happen in the video..."
-            className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+            className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
             value={prompt}
             onChange={handleChange}
             onPaste={handlePaste}

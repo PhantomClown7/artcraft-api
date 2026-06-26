@@ -568,10 +568,26 @@ export const PromptBoxEdit = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        imagePromptRow={
+          selectedImageModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedImageModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage}
+              className="relative top-auto rounded-2xl"
+            />
+          ) : undefined
+        }
       >
         <textarea
           placeholder="Write what you want to change in your image and click generate..."
-          className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}

@@ -323,24 +323,31 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
       });
     }, [prompt, hasMentionItems, mentionRegex, mentionLabelMap, mentionItems]);
 
+    // Shared reference-image row. Inline it attaches to the top of the box
+    // (square bottom); the fullscreen modal passes a className to round the
+    // bottom corners since it sits in-flow above the controls there.
+    const renderImagePromptRow = (className?: string) =>
+      supportsImagePrompts ? (
+        <ImagePromptRow
+          maxImagePromptCount={maxImagePromptCount}
+          referenceImages={referenceImages}
+          setReferenceImages={onReferenceImagesChange}
+          onPickFromLibrary={onPickFromLibrary}
+          onClearAll={onClearAllRefs}
+          isVideo={isVideo}
+          isReferenceMode={isReferenceMode}
+          endFrameImage={endFrameImage}
+          setEndFrameImage={onEndFrameImageChange}
+          showEndFrameSection={showEndFrameSection}
+          onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
+          className={className}
+        />
+      ) : null;
+
     return (
       <div ref={ref} className="prompt-box-root">
         <div className="relative flex flex-col">
-          {isImageRowVisible && (
-            <ImagePromptRow
-              maxImagePromptCount={maxImagePromptCount}
-              referenceImages={referenceImages}
-              setReferenceImages={onReferenceImagesChange}
-              onPickFromLibrary={onPickFromLibrary}
-              onClearAll={onClearAllRefs}
-              isVideo={isVideo}
-              isReferenceMode={isReferenceMode}
-              endFrameImage={endFrameImage}
-              setEndFrameImage={onEndFrameImageChange}
-              showEndFrameSection={showEndFrameSection}
-              onPickEndFrameFromLibrary={onPickEndFrameFromLibrary}
-            />
-          )}
+          {isImageRowVisible && renderImagePromptRow()}
 
           {mediaReferenceRow}
 
@@ -555,14 +562,25 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
             </div>
           </div>
         </div>
-        <PromptFullscreenModal isOpen={isFullscreen} onClose={closeFullscreen}>
+        <PromptFullscreenModal
+          isOpen={isFullscreen}
+          onClose={closeFullscreen}
+          footerControls={
+            <>
+              {modelSelector}
+              {leftToolbar}
+            </>
+          }
+          imagePromptRow={renderImagePromptRow("rounded-2xl sm:rounded-b-2xl")}
+        >
           {hasMentionItems && mentionItems ? (
             <MentionTextarea
               value={prompt}
               onChange={onPromptChange}
               mentionItems={mentionItems}
               placeholder={placeholder}
-              className="promptbox-scrollbar h-full w-full text-base-fg placeholder-base-fg/60"
+              className="promptbox-scrollbar h-full min-h-0 w-full overflow-y-auto text-base-fg placeholder-base-fg/60"
+              style={{ resize: "none" }}
               colorMap={mentionColorMap}
               onKeyDown={(e) => {
                 if (
@@ -579,7 +597,7 @@ export const PromptBox = forwardRef<HTMLDivElement, PromptBoxProps>(
           ) : (
             <textarea
               placeholder={placeholder}
-              className="promptbox-scrollbar text-md h-full w-full resize-none bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+              className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
               value={prompt}
               onChange={handleChange}
               onKeyDown={handleKeyDown}

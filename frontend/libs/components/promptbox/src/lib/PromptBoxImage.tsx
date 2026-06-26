@@ -574,10 +574,29 @@ export const PromptBoxImage = ({
         onClose={closeFullscreen}
         promptLength={prompt.length}
         maxLength={maxLen}
+        footerControls={modelSelector}
+        imagePromptRow={
+          selectedModel?.canUseImagePrompt ? (
+            <ImagePromptRow
+              visible={true}
+              maxImagePromptCount={Math.max(
+                1,
+                selectedModel?.maxImagePromptCount ?? 1,
+              )}
+              allowUpload={true}
+              referenceImages={referenceImages}
+              setReferenceImages={setReferenceImages}
+              uploadImage={uploadImage as any}
+              // Reset the inline row's absolute "float above the box"
+              // positioning so it sits in-flow in the modal, with rounded corners.
+              className="relative top-auto rounded-2xl"
+            />
+          ) : undefined
+        }
       >
         <textarea
           placeholder="Describe what you want in the image..."
-          className="promptbox-scrollbar text-md h-full w-full resize-none rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
+          className="promptbox-scrollbar text-md h-full min-h-0 w-full resize-none overflow-y-auto rounded bg-transparent text-base-fg placeholder-base-fg/60 focus:outline-none"
           value={prompt}
           onChange={handleChange}
           onPaste={handlePaste}
