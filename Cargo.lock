@@ -3049,6 +3049,8 @@ dependencies = [
  "futures 0.3.32",
  "log",
  "mysql_queries",
+ "reqwest 0.12.23",
+ "rustls 0.23.36",
  "serde",
  "serde_derive",
  "serde_json",
