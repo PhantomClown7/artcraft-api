@@ -5,3 +5,6 @@ pub mod user_referrals;
 pub mod user_stripe_data;
 pub mod wallet_ledger_entries;
 pub mod wallets;
+pub mod user_daily_spends;
+pub mod user_spend_summaries;
+pub mod user_spend_events;
