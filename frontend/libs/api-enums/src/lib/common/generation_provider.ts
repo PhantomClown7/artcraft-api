@@ -9,4 +9,6 @@ export enum GenerationProvider {
   Sora = "sora",
   WorldLabs = "world_labs",
   Fal = "fal",
+  Runninghub = "runninghub",
+  Apiyi = "apiyi",
 }

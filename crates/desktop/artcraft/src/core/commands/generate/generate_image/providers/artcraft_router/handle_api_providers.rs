@@ -1,3 +1,9 @@
+use apiyi_client::creds::api_key::ApiyiApiKey;
+use apiyi_client::requests::image::gpt_image_2_vip::image_to_image::GptImage2VipImageToImageRequest;
+use apiyi_client::requests::image::gpt_image_2_vip::text_to_image::GptImage2VipTextToImageRequest;
+use apiyi_client::requests::image::nano_banana_2::image_to_image::NanaBanana2ImageToImageRequest;
+use apiyi_client::requests::image::nano_banana_2::text_to_image::NanaBanana2TextToImageRequest;
+use artcraft_client::endpoints::media_files::upload_image_media_file_from_bytes::{upload_image_media_file_from_bytes, ImageType, UploadImageBytesArgs};
 use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use artcraft_client::utils::api_host::ApiHost;
 use artcraft_router::api::image_list_ref::ImageListRef;
@@ -6,9 +12,12 @@ use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMi
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_client::RouterClient;
 use artcraft_router::client::router_fal_client::RouterFalClient;
+use artcraft_router::client::router_runninghub_client::RouterRunninghubClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
+use base64::Engine;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info, warn};
@@ -17,13 +26,16 @@ use tokens::tokens::prompts::PromptToken;
 
 use crate::core::api_adapters::models::image::tauri_image_model_to_generation_model::tauri_image_model_to_generation_model;
 use crate::core::api_adapters::models::image::tauri_image_model_to_router_model::tauri_image_model_to_router_model;
-use crate::core::commands::enqueue::generate_error::GenerateError;
+use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
 use crate::core::commands::generate::common::router_image_request_to_artcraft_prompt::router_image_request_to_artcraft_prompt;
 use crate::core::commands::generate::generate_image::providers::artcraft_router::utils::convert_enums_to_router::{convert_aspect_ratio, convert_quality, convert_resolution};
 use crate::core::commands::generate::generate_image::providers::artcraft_router::utils::map_media_files_to_urls::map_media_file_tokens_to_cdn_urls;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::commands::generate::generate_image::tauri_image_model::TauriImageModel;
+use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
+use crate::core::providers::credentials::provider_credential_key::ProviderCredentialKey;
+use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 
@@ -38,6 +50,9 @@ pub async fn handle_api_key_provider(
   match provider {
     GenerationProvider::Fal => {
       handle_fal(request, api_key, app_env_configs, storyteller_creds_manager).await
+    }
+    GenerationProvider::Runninghub => {
+      handle_runninghub(request, api_key, app_env_configs, storyteller_creds_manager).await
     }
     _ => {
       Err(GenerateError::NotYetImplemented(
@@ -63,7 +78,6 @@ async fn handle_fal(
       format!("Model {:?} is not supported via the FAL router path", tauri_model),
     ))?;
 
-  // Collect all media file tokens that need resolving.
   let image_inputs = resolve_image_inputs(request, api_host).await?;
 
   let router_request = GenerateImageRequestBuilder {
@@ -83,7 +97,6 @@ async fn handle_fal(
     idempotency_token: None,
   };
 
-  // Create a prompt record before sending the generation request.
   let maybe_prompt_token = create_prompt_record(
     &router_request,
     api_host,
@@ -111,7 +124,7 @@ async fn handle_fal(
 
   match request.send_request(&client).await {
     Ok(response) => {
-      build_task_enqueue_success(tauri_model, response, maybe_prompt_token)
+      build_task_enqueue_success_fal(tauri_model, response, maybe_prompt_token)
     },
     Err(err) => {
       warn!("Fal image generation failed: {:?}", err);
@@ -120,22 +133,226 @@ async fn handle_fal(
   }
 }
 
-// ── Helpers ──
+// ── RunningHub ──
+
+async fn handle_runninghub(
+  request: &TauriGenerateImageRequest,
+  api_key: &str,
+  app_env_configs: &AppEnvConfigs,
+  storyteller_creds_manager: &StorytellerCredentialManager,
+) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
+  let api_host = &app_env_configs.storyteller_host;
+
+  let router_model = tauri_image_model_to_router_model(tauri_model)
+    .ok_or_else(|| GenerateError::NotYetImplemented(
+      format!("Model {:?} is not supported via the RunningHub router path", tauri_model),
+    ))?;
+
+  let image_inputs = resolve_image_inputs(request, api_host).await?;
+
+  let router_request = GenerateImageRequestBuilder {
+    model: router_model,
+    provider: RouterProvider::Runninghub,
+    prompt: request.prompt.clone(),
+    image_inputs,
+    resolution: request.resolution.map(convert_resolution),
+    aspect_ratio: request.aspect_ratio.map(convert_aspect_ratio),
+    quality: request.quality.map(convert_quality),
+    image_batch_count: request.batch_size.map(|n| n as u16),
+    horizontal_angle: request.adjust_horizontal_angle,
+    vertical_angle: request.adjust_vertical_angle,
+    zoom: request.adjust_zoom,
+    request_mismatch_mitigation_strategy: RequestMismatchMitigationStrategy::PayMoreUpgrade,
+    generation_mode_mismatch_strategy: Some(GenerationModeMismatchStrategy::GenerateAnyway),
+    idempotency_token: None,
+  };
+
+  let maybe_prompt_token = create_prompt_record(
+    &router_request,
+    api_host,
+    storyteller_creds_manager,
+  ).await;
+
+  let runninghub_client = RouterRunninghubClient::new_from_raw_key(api_key);
+  let client = RouterClient::Runninghub(runninghub_client);
+
+  info!("Building RunningHub image generation plan: model={:?}", router_model);
+
+  let built_request = match router_request.build2() {
+    Ok(ImageGenerationDraftOrRequest::Request(r)) => r,
+    Ok(ImageGenerationDraftOrRequest::Draft(draft)) => {
+      warn!("RunningHub received draft request: {:?}", draft);
+      return Err(GenerateError::NotYetImplemented("RunningHub should not send draft requests".to_string()));
+    },
+    Err(err) => {
+      warn!("Could not build RunningHub request: {:?}", err);
+      return Err(err.into());
+    }
+  };
+
+  info!("Executing RunningHub image generation (synchronous poll)...");
+
+  match built_request.send_request(&client).await {
+    Ok(response) => {
+      build_task_enqueue_success_runninghub(tauri_model, response, maybe_prompt_token)
+    },
+    Err(err) => {
+      warn!("RunningHub image generation failed: {:?}", err);
+      Err(err.into())
+    }
+  }
+}
+
+// ── Apiyi ──
+
+/// Handle Apiyi image generation. Apiyi uses model-specific API keys, so
+/// this function loads the appropriate key from the credential cache.
+pub async fn handle_apiyi(
+  request: &TauriGenerateImageRequest,
+  credential_cache: &ProviderCredentialLoadingCache,
+  app_env_configs: &AppEnvConfigs,
+  storyteller_creds_manager: &StorytellerCredentialManager,
+) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let tauri_model = request.model.ok_or(GenerateError::no_model_specified())?;
+  let api_host = &app_env_configs.storyteller_host;
+
+  let credential_key = match tauri_model {
+    TauriImageModel::ApiyiNanaBanana2 => ProviderCredentialKey::ApiyiNanoBananaApiKey,
+    TauriImageModel::ApiyiGptImage2Vip => ProviderCredentialKey::ApiyiGptImage2ApiKey,
+    _ => return Err(GenerateError::NotYetImplemented(
+      format!("Apiyi model {:?} is not supported", tauri_model)
+    )),
+  };
+
+  let payload = credential_cache.get_credentials(credential_key)
+    .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Failed to load Apiyi credentials: {:?}", e)))?
+    .ok_or_else(|| GenerateError::MissingCredentials(MissingCredentialsReason::NeedsApiyiApiKey))?;
+
+  let raw_key = match payload {
+    ProviderCredentialPayload::ApiKey(key) => key.as_str().to_string(),
+    ProviderCredentialPayload::WebLogin(_) => {
+      return Err(GenerateError::MissingCredentials(MissingCredentialsReason::NeedsApiyiApiKey));
+    }
+  };
+
+  let api_key = ApiyiApiKey::from_str(&raw_key);
+  let prompt = request.prompt.clone().unwrap_or_default();
+  let image_urls = get_image_urls_from_request(request, api_host).await?;
+
+  info!("Executing Apiyi image generation: model={:?}, image_inputs={}", tauri_model, image_urls.len());
+
+  let image_base64 = match tauri_model {
+    TauriImageModel::ApiyiNanaBanana2 => {
+      call_apiyi_nano_banana_2(&api_key, &prompt, &image_urls).await?
+    }
+    TauriImageModel::ApiyiGptImage2Vip => {
+      call_apiyi_gpt_image_2_vip(&api_key, &prompt, &image_urls).await?
+    }
+    _ => unreachable!(),
+  };
+
+  // Decode base64 and upload to Artcraft CDN
+  let bytes = BASE64_STANDARD.decode(&image_base64)
+    .map_err(|e| GenerateError::DecodeError(e))?;
+
+  let creds = storyteller_creds_manager.get_credentials()
+    .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Credential read error: {:?}", e)))?
+    .ok_or_else(|| GenerateError::needs_storyteller_credentials())?;
+
+  let upload_result = upload_image_media_file_from_bytes(UploadImageBytesArgs {
+    api_host,
+    maybe_creds: Some(&creds),
+    image_bytes: bytes,
+    image_type: ImageType::Png,
+    is_intermediate_system_file: false,
+    maybe_generation_provider: Some(GenerationProvider::Apiyi),
+  }).await
+    .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("CDN upload failed: {:?}", e)))?;
+
+  info!("Apiyi image uploaded to CDN: {:?}", upload_result.media_file_token);
+
+  let generation_model = tauri_image_model_to_generation_model(tauri_model);
+
+  Ok(TaskEnqueueSuccess {
+    task_type: TaskType::ImageGeneration,
+    model: Some(generation_model),
+    provider: GenerationProvider::Apiyi,
+    provider_job_id: Some(upload_result.media_file_token.as_str().to_string()),
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: None,
+    maybe_prompt_token: None,
+  })
+}
+
+// ── Apiyi model helpers ──
+
+async fn call_apiyi_nano_banana_2(
+  api_key: &ApiyiApiKey,
+  prompt: &str,
+  image_urls: &[String],
+) -> Result<String, GenerateError> {
+  if image_urls.is_empty() {
+    let req = NanaBanana2TextToImageRequest {
+      prompt: prompt.to_string(),
+      image_size: None,
+      aspect_ratio: None,
+    };
+    req.send(api_key).await
+      .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi NanaBanana2 error: {:?}", e)))
+  } else {
+    let base64_list = download_and_encode_images(image_urls).await?;
+    let req = NanaBanana2ImageToImageRequest {
+      prompt: prompt.to_string(),
+      image_base64_list: base64_list,
+      image_size: None,
+      aspect_ratio: None,
+    };
+    req.send(api_key).await
+      .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi NanaBanana2 image-to-image error: {:?}", e)))
+  }
+}
+
+async fn call_apiyi_gpt_image_2_vip(
+  api_key: &ApiyiApiKey,
+  prompt: &str,
+  image_urls: &[String],
+) -> Result<String, GenerateError> {
+  if image_urls.is_empty() {
+    let req = GptImage2VipTextToImageRequest {
+      prompt: prompt.to_string(),
+      size: None,
+    };
+    req.send(api_key).await
+      .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi GptImage2Vip error: {:?}", e)))
+  } else {
+    // Use the first image for GPT Image 2 VIP edits
+    let bytes = download_image_bytes(&image_urls[0]).await?;
+    let req = GptImage2VipImageToImageRequest {
+      prompt: prompt.to_string(),
+      image_bytes: bytes,
+      image_filename: "input.png".to_string(),
+      size: None,
+    };
+    req.send(api_key).await
+      .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi GptImage2Vip image-to-image error: {:?}", e)))
+  }
+}
+
+// ── Shared helpers ──
 
 async fn resolve_image_inputs(
   request: &TauriGenerateImageRequest,
   api_host: &ApiHost,
 ) -> Result<Option<ImageListRef>, GenerateError> {
-  let mut tokens: Vec<MediaFileToken> = Vec::new();
+  let mut tokens = Vec::new();
 
   if let Some(canvas_token) = &request.canvas_image_media_token {
     tokens.push(canvas_token.clone());
   }
-
   if let Some(scene_token) = &request.scene_image_media_token {
     tokens.push(scene_token.clone());
   }
-
   if let Some(media_tokens) = &request.image_media_tokens {
     tokens.extend(media_tokens.clone());
   }
@@ -148,6 +365,36 @@ async fn resolve_image_inputs(
   Ok(Some(ImageListRef::Urls(urls)))
 }
 
+async fn get_image_urls_from_request(
+  request: &TauriGenerateImageRequest,
+  api_host: &ApiHost,
+) -> Result<Vec<String>, GenerateError> {
+  match resolve_image_inputs(request, api_host).await? {
+    Some(ImageListRef::Urls(urls)) => Ok(urls),
+    _ => Ok(vec![]),
+  }
+}
+
+async fn download_image_bytes(url: &str) -> Result<Vec<u8>, GenerateError> {
+  let response = reqwest::get(url).await
+    .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Download failed for {}: {:?}", url, e)))?;
+  let bytes = response.bytes().await
+    .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Read bytes failed: {:?}", e)))?;
+  Ok(bytes.to_vec())
+}
+
+async fn download_and_encode_images(
+  urls: &[String],
+) -> Result<Vec<(String, String)>, GenerateError> {
+  let mut result = Vec::with_capacity(urls.len());
+  for url in urls {
+    let bytes = download_image_bytes(url).await?;
+    let encoded = BASE64_STANDARD.encode(&bytes);
+    result.push(("image/png".to_string(), encoded));
+  }
+  Ok(result)
+}
+
 /// Create a prompt record in the Artcraft backend before sending the generation request.
 /// Fails open: if prompt creation fails, we log and return None rather than blocking generation.
 async fn create_prompt_record(
@@ -158,7 +405,7 @@ async fn create_prompt_record(
   let creds = match storyteller_creds_manager.get_credentials() {
     Ok(Some(creds)) => creds,
     _ => {
-      warn!("[FalRouter] No Storyteller credentials available, skipping prompt creation");
+      warn!("[Router] No Storyteller credentials available, skipping prompt creation");
       return None;
     }
   };
@@ -167,17 +414,17 @@ async fn create_prompt_record(
 
   match create_prompt(api_host, Some(&creds), prompt_request).await {
     Ok(response) => {
-      info!("[FalRouter] Created prompt: {:?}", response.prompt_token);
+      info!("[Router] Created prompt: {:?}", response.prompt_token);
       Some(response.prompt_token)
     }
     Err(err) => {
-      error!("[FalRouter] Failed to create prompt (continuing anyway): {:?}", err);
+      error!("[Router] Failed to create prompt (continuing anyway): {:?}", err);
       None
     }
   }
 }
 
-fn build_task_enqueue_success(
+fn build_task_enqueue_success_fal(
   tauri_model: TauriImageModel,
   response: GenerateImageResponse,
   maybe_prompt_token: Option<PromptToken>,
@@ -198,6 +445,28 @@ fn build_task_enqueue_success(
     provider_job_id: Some(provider_job_id),
     maybe_queue_status_url: fal_payload.maybe_status_url,
     maybe_queue_response_url: fal_payload.maybe_response_url,
+    maybe_prompt_token,
+  })
+}
+
+fn build_task_enqueue_success_runninghub(
+  tauri_model: TauriImageModel,
+  response: GenerateImageResponse,
+  maybe_prompt_token: Option<PromptToken>,
+) -> Result<TaskEnqueueSuccess, GenerateError> {
+  let runninghub_payload = response.get_runninghub_payload()
+    .ok_or(GenerateError::ResponseHadNoJobTokens)?;
+
+  let generation_model = tauri_image_model_to_generation_model(tauri_model);
+
+  // Store the final image URL in queue_response_url so the polling thread can download it.
+  Ok(TaskEnqueueSuccess {
+    task_type: TaskType::ImageGeneration,
+    model: Some(generation_model),
+    provider: GenerationProvider::Runninghub,
+    provider_job_id: Some(runninghub_payload.task_id.clone()),
+    maybe_queue_status_url: None,
+    maybe_queue_response_url: Some(runninghub_payload.image_url.clone()),
     maybe_prompt_token,
   })
 }

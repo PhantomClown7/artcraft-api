@@ -9,6 +9,9 @@ pub enum ProviderCredentialKey {
 
   FalApiKey,
   ReplicateApiKey,
+  RunninghubApiKey,
+  ApiyiNanoBananaApiKey,
+  ApiyiGptImage2ApiKey,
 
   // ========== WEB LOGINS ==========
 
@@ -25,6 +28,9 @@ impl ProviderCredentialKey {
       // Api keys
       Self::FalApiKey => ProviderCredentialType::ApiKey,
       Self::ReplicateApiKey => ProviderCredentialType::ApiKey,
+      Self::RunninghubApiKey => ProviderCredentialType::ApiKey,
+      Self::ApiyiNanoBananaApiKey => ProviderCredentialType::ApiKey,
+      Self::ApiyiGptImage2ApiKey => ProviderCredentialType::ApiKey,
       // Web logins
       Self::GrokWebLogin => ProviderCredentialType::WebLogin,
       Self::HiggsfieldWebLogin => ProviderCredentialType::WebLogin,
@@ -38,6 +44,9 @@ impl ProviderCredentialKey {
       // Api keys
       ProviderCredentialKey::FalApiKey => "fal.api_key.txt",
       ProviderCredentialKey::ReplicateApiKey => "replicate.api_key.txt",
+      ProviderCredentialKey::RunninghubApiKey => "runninghub.api_key.txt",
+      ProviderCredentialKey::ApiyiNanoBananaApiKey => "apiyi.nano_banana.api_key.txt",
+      ProviderCredentialKey::ApiyiGptImage2ApiKey => "apiyi.gpt_image_2.api_key.txt",
       // Web logins
       ProviderCredentialKey::GrokWebLogin => "grok.web_login.toml",
       ProviderCredentialKey::HiggsfieldWebLogin => "higgsfield.web_login.toml",

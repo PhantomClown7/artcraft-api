@@ -81,6 +81,8 @@ pub enum MissingCredentialsReason {
   NeedsMidjourneyCredentials,
   NeedsMidjourneyUserId,
   NeedsMidjourneyUserInfo,
+  NeedsRunninghubApiKey,
+  NeedsApiyiApiKey,
   NeedsSoraCredentials,
   NeedsStorytellerCredentials,
   NeedsWorldLabsCredentials,

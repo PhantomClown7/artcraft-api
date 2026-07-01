@@ -1,0 +1,25 @@
+[package]
+name = "runninghub_client"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "runninghub_client"
+path = "src/lib.rs"
+
+[dependencies]
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# External
+anyhow.workspace = true
+log.workspace = true
+reqwest.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true

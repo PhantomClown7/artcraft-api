@@ -3,10 +3,12 @@ use serde::Serialize;
 #[derive(Debug, Copy, Clone, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationServiceProvider {
+  Apiyi,
   Artcraft,
   Fal,
   Grok,
   Midjourney,
+  Runninghub,
   Sora,
   WorldLabs,
 }

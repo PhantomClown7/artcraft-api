@@ -20,10 +20,12 @@ use utoipa::ToSchema;
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Ord, PartialOrd, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum GenerationProvider {
+  Apiyi,
   Artcraft,
   Fal,
   Grok,
   Midjourney,
+  Runninghub,
   Sora,
   WorldLabs,
 }
@@ -40,10 +42,12 @@ impl_sqlite_enum_coders!(GenerationProvider);
 impl GenerationProvider {
   pub fn to_str(&self) -> &'static str {
     match self {
+      Self::Apiyi => "apiyi",
       Self::Artcraft => "artcraft",
       Self::Fal => "fal",
       Self::Grok => "grok",
       Self::Midjourney => "midjourney",
+      Self::Runninghub => "runninghub",
       Self::Sora => "sora",
       Self::WorldLabs => "world_labs",
     }
@@ -51,10 +55,12 @@ impl GenerationProvider {
 
   pub fn from_str(value: &str) -> Result<Self, EnumError> {
     match value {
+      "apiyi" => Ok(Self::Apiyi),
       "artcraft" => Ok(Self::Artcraft),
       "fal" => Ok(Self::Fal),
       "grok" => Ok(Self::Grok),
       "midjourney" => Ok(Self::Midjourney),
+      "runninghub" => Ok(Self::Runninghub),
       "sora" => Ok(Self::Sora),
       "world_labs" => Ok(Self::WorldLabs),
       _ => Err(EnumError::CouldNotConvertFromString(value.to_string())),
@@ -65,10 +71,12 @@ impl GenerationProvider {
     // NB: BTreeSet is sorted
     // NB: BTreeSet::from() isn't const, but not worth using LazyStatic, etc.
     BTreeSet::from([
+      Self::Apiyi,
       Self::Artcraft,
       Self::Fal,
       Self::Grok,
       Self::Midjourney,
+      Self::Runninghub,
       Self::Sora,
       Self::WorldLabs,
     ])
@@ -86,30 +94,36 @@ mod tests {
 
     #[test]
     fn test_serialization() {
+      assert_serialization(GenerationProvider::Apiyi, "apiyi");
       assert_serialization(GenerationProvider::Artcraft, "artcraft");
       assert_serialization(GenerationProvider::Fal, "fal");
       assert_serialization(GenerationProvider::Grok, "grok");
       assert_serialization(GenerationProvider::Midjourney, "midjourney");
+      assert_serialization(GenerationProvider::Runninghub, "runninghub");
       assert_serialization(GenerationProvider::Sora, "sora");
       assert_serialization(GenerationProvider::WorldLabs, "world_labs");
     }
 
     #[test]
     fn to_str() {
+      assert_eq!(GenerationProvider::Apiyi.to_str(), "apiyi");
       assert_eq!(GenerationProvider::Artcraft.to_str(), "artcraft");
       assert_eq!(GenerationProvider::Fal.to_str(), "fal");
       assert_eq!(GenerationProvider::Grok.to_str(), "grok");
       assert_eq!(GenerationProvider::Midjourney.to_str(), "midjourney");
+      assert_eq!(GenerationProvider::Runninghub.to_str(), "runninghub");
       assert_eq!(GenerationProvider::Sora.to_str(), "sora");
       assert_eq!(GenerationProvider::WorldLabs.to_str(), "world_labs");
     }
 
     #[test]
     fn from_str() {
+      assert_eq!(GenerationProvider::from_str("apiyi").unwrap(), GenerationProvider::Apiyi);
       assert_eq!(GenerationProvider::from_str("artcraft").unwrap(), GenerationProvider::Artcraft);
       assert_eq!(GenerationProvider::from_str("fal").unwrap(), GenerationProvider::Fal);
       assert_eq!(GenerationProvider::from_str("grok").unwrap(), GenerationProvider::Grok);
       assert_eq!(GenerationProvider::from_str("midjourney").unwrap(), GenerationProvider::Midjourney);
+      assert_eq!(GenerationProvider::from_str("runninghub").unwrap(), GenerationProvider::Runninghub);
       assert_eq!(GenerationProvider::from_str("sora").unwrap(), GenerationProvider::Sora);
       assert_eq!(GenerationProvider::from_str("world_labs").unwrap(), GenerationProvider::WorldLabs);
     }
@@ -128,11 +142,13 @@ mod tests {
     #[test]
     fn all_variants() {
       let mut variants = GenerationProvider::all_variants();
-      assert_eq!(variants.len(), 6);
+      assert_eq!(variants.len(), 8);
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Apiyi));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Artcraft));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Fal));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Grok));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Midjourney));
+      assert_eq!(variants.pop_first(), Some(GenerationProvider::Runninghub));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::Sora));
       assert_eq!(variants.pop_first(), Some(GenerationProvider::WorldLabs));
       assert_eq!(variants.pop_first(), None);

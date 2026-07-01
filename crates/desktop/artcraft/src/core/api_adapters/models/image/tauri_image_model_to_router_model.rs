@@ -23,6 +23,10 @@ pub fn tauri_image_model_to_router_model(model: TauriImageModel) -> Option<Route
     TauriImageModel::Seedream5Lite => Some(RouterImageModel::Seedream5Lite), // Text-to-Image
     TauriImageModel::QwenEdit2511Angles => Some(RouterImageModel::QwenEdit2511Angles),
     TauriImageModel::Flux2LoraAngles => Some(RouterImageModel::Flux2LoraAngles),
+    TauriImageModel::RunninghubNanoBanana2 => Some(RouterImageModel::NanoBanana2),
+    TauriImageModel::RunninghubGptImage2 => Some(RouterImageModel::GptImage2),
+    TauriImageModel::ApiyiNanaBanana2 => Some(RouterImageModel::NanoBanana2),
+    TauriImageModel::ApiyiGptImage2Vip => Some(RouterImageModel::GptImage2Vip),
     // Not accounted for yet
     TauriImageModel::GrokImage => None,
     TauriImageModel::Recraft3 => None,

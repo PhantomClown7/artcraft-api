@@ -4,9 +4,11 @@ use serde_derive::{Deserialize, Serialize};
 #[derive(Copy, Clone, Debug, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum RouterProvider {
+  Apiyi,
   Artcraft,
   Fal,
   GmiCloud,
   GrokApi,
+  Runninghub,
   Seedance2Pro,
 }

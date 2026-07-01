@@ -2,7 +2,9 @@ use crate::core::providers::credentials::provider_credential_loading_cache::Prov
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::data_dir::app_data_root::AppDataRoot;
 use crate::core::state::task_database::TaskDatabase;
+use crate::core::threads::third_party_task_polling_thread::handlers::apiyi::handle_apiyi_complete::handle_apiyi_complete;
 use crate::core::threads::third_party_task_polling_thread::handlers::fal::poll_fal_tasks::poll_fal_tasks;
+use crate::core::threads::third_party_task_polling_thread::handlers::runninghub::handle_runninghub_complete::handle_runninghub_complete;
 use crate::core::utils::task_database_pending_statuses::TASK_DATABASE_PENDING_STATUSES;
 use crate::services::storyteller::state::storyteller_credential_manager::StorytellerCredentialManager;
 use enums::common::generation_provider::GenerationProvider;
@@ -79,18 +81,59 @@ async fn poll_iteration(
     .filter(|t| t.provider == GenerationProvider::Fal)
     .collect();
 
-  let non_fal_tasks: Vec<&Task> = tasks.iter()
-    .filter(|t| t.provider != GenerationProvider::Fal)
+  let runninghub_tasks: Vec<&Task> = tasks.iter()
+    .filter(|t| t.provider == GenerationProvider::Runninghub)
     .collect();
 
-  if !non_fal_tasks.is_empty() {
-    for task in &non_fal_tasks {
+  let apiyi_tasks: Vec<&Task> = tasks.iter()
+    .filter(|t| t.provider == GenerationProvider::Apiyi)
+    .collect();
+
+  let other_tasks: Vec<&Task> = tasks.iter()
+    .filter(|t| {
+      t.provider != GenerationProvider::Fal
+        && t.provider != GenerationProvider::Runninghub
+        && t.provider != GenerationProvider::Apiyi
+    })
+    .collect();
+
+  if !other_tasks.is_empty() {
+    for task in &other_tasks {
       warn!(
-        "[ThirdPartyPolling] Skipping non-FAL task: id={}, provider={:?}, type={:?}",
+        "[ThirdPartyPolling] Skipping non-FAL/RunningHub/Apiyi task: id={}, provider={:?}, type={:?}",
         task.id.as_str(),
         task.provider,
         task.task_type,
       );
+    }
+  }
+
+  // Handle RunningHub tasks (image already polled, URL in queue_response_url)
+  if !runninghub_tasks.is_empty() {
+    info!("[ThirdPartyPolling] {} RunningHub task(s) to complete", runninghub_tasks.len());
+    for task in &runninghub_tasks {
+      handle_runninghub_complete(
+        app_handle,
+        app_env_configs,
+        app_data_root,
+        task_database,
+        storyteller_creds_manager,
+        task,
+      ).await;
+    }
+  }
+
+  // Handle Apiyi tasks (image already uploaded, media token in provider_job_id)
+  if !apiyi_tasks.is_empty() {
+    info!("[ThirdPartyPolling] {} Apiyi task(s) to complete", apiyi_tasks.len());
+    for task in &apiyi_tasks {
+      handle_apiyi_complete(
+        app_handle,
+        app_env_configs,
+        task_database,
+        storyteller_creds_manager,
+        task,
+      ).await;
     }
   }
 

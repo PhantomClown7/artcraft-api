@@ -29,5 +29,9 @@ pub fn tauri_image_model_to_enums_model(model: TauriImageModel) -> Option<Common
     TauriImageModel::Midjourney => None,
     TauriImageModel::FluxProKontextMax => None,
     TauriImageModel::FluxDevJuggernaut => None,
+    TauriImageModel::RunninghubNanoBanana2 => None,
+    TauriImageModel::RunninghubGptImage2 => None,
+    TauriImageModel::ApiyiNanaBanana2 => None,
+    TauriImageModel::ApiyiGptImage2Vip => None,
   }
 }

@@ -34,10 +34,12 @@ impl TaskEnqueueSuccess{
   
   pub fn to_frontend_event_service(&self) -> GenerationServiceProvider {
     match self.provider {
+      GenerationProvider::Apiyi => GenerationServiceProvider::Apiyi,
       GenerationProvider::Artcraft => GenerationServiceProvider::Artcraft,
       GenerationProvider::Fal => GenerationServiceProvider::Fal,
       GenerationProvider::Grok => GenerationServiceProvider::Grok,
       GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
+      GenerationProvider::Runninghub => GenerationServiceProvider::Runninghub,
       GenerationProvider::Sora => GenerationServiceProvider::Sora,
       GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
     }

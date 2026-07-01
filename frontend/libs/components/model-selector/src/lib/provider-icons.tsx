@@ -10,6 +10,8 @@ const GENERATION_PROVIDER_TO_CREATOR: Partial<Record<GenerationProvider, ModelCr
   [GenerationProvider.Sora]: ModelCreator.OpenAi,
   [GenerationProvider.WorldLabs]: ModelCreator.WorldLabs,
   [GenerationProvider.Fal]: ModelCreator.Fal,
+  [GenerationProvider.Runninghub]: ModelCreator.Runninghub,
+  [GenerationProvider.Apiyi]: ModelCreator.Apiyi,
 };
 
 export const getProviderIcon = (
@@ -45,6 +47,10 @@ export const getProviderDisplayName = (provider: GenerationProvider): string => 
       return "Sora / ChatGPT";
     case GenerationProvider.WorldLabs:
       return "World Labs";
+    case GenerationProvider.Runninghub:
+      return "RunningHub";
+    case GenerationProvider.Apiyi:
+      return "Apiyi";
     default:
       return "Unknown Provider";
   }

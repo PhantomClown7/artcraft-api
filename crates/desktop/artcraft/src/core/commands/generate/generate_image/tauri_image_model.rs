@@ -45,6 +45,20 @@ pub enum TauriImageModel {
   #[serde(rename = "midjourney")]
   Midjourney,
 
+  // RunningHub models
+
+  #[serde(rename = "runninghub_nano_banana_2")]
+  RunninghubNanoBanana2,
+  #[serde(rename = "runninghub_gpt_image_2")]
+  RunninghubGptImage2,
+
+  // Apiyi models
+
+  #[serde(rename = "apiyi_nano_banana_2")]
+  ApiyiNanaBanana2,
+  #[serde(rename = "apiyi_gpt_image_2_vip")]
+  ApiyiGptImage2Vip,
+
   // Image edit models
 
   #[serde(rename = "flux_pro_kontext_max")]
@@ -82,6 +96,10 @@ impl TauriImageModel {
       Self::Seedream4p5 => CommonModelType::Seedream4p5,
       Self::Seedream5Lite => CommonModelType::Seedream5Lite,
       Self::Midjourney => CommonModelType::Midjourney,
+      Self::RunninghubNanoBanana2 => CommonModelType::NanoBanana2,
+      Self::RunninghubGptImage2 => CommonModelType::GptImage2,
+      Self::ApiyiNanaBanana2 => CommonModelType::NanoBanana2,
+      Self::ApiyiGptImage2Vip => CommonModelType::GptImage2,
       Self::FluxProKontextMax => CommonModelType::FluxProKontextMax,
       Self::QwenEdit2511Angles => CommonModelType::QwenEdit2511Angles,
       Self::Flux2LoraAngles => CommonModelType::Flux2LoraAngles,

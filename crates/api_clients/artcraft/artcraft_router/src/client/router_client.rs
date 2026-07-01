@@ -1,17 +1,23 @@
 use crate::client::multi_router_client::MultiRouterClient;
+use crate::client::router_apiyi_gpt_image_2_client::RouterApiyiGptImage2Client;
+use crate::client::router_apiyi_nano_banana_client::RouterApiyiNanaBananaClient;
 use crate::client::router_artcraft_client::RouterArtcraftClient;
 use crate::client::router_fal_client::RouterFalClient;
 use crate::client::router_gmicloud_client::RouterGmiCloudClient;
 use crate::client::router_grok_api_client::RouterGrokApiClient;
+use crate::client::router_runninghub_client::RouterRunninghubClient;
 use crate::client::router_seedance2pro_client::RouterSeedance2ProClient;
 use crate::errors::client_error::{ClientError, ClientType};
 
 pub enum RouterClient {
-  Multi(MultiRouterClient),
+  ApiyiGptImage2(RouterApiyiGptImage2Client),
+  ApiyiNanaBanana(RouterApiyiNanaBananaClient),
   Artcraft(RouterArtcraftClient),
   Fal(RouterFalClient),
   GmiCloud(RouterGmiCloudClient),
   GrokApi(RouterGrokApiClient),
+  Multi(MultiRouterClient),
+  Runninghub(RouterRunninghubClient),
   Seedance2Pro(RouterSeedance2ProClient),
 }
 
@@ -45,6 +51,30 @@ impl RouterClient {
       RouterClient::GrokApi(client) => Ok(client),
       RouterClient::Multi(multi) => multi.get_grok_api_client_ref(),
       _ => Err(ClientError::ClientNotConfigured(ClientType::GrokApi)),
+    }
+  }
+
+  pub fn get_runninghub_client_ref(&self) -> Result<&RouterRunninghubClient, ClientError> {
+    match self {
+      RouterClient::Runninghub(client) => Ok(client),
+      RouterClient::Multi(multi) => multi.get_runninghub_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::Runninghub)),
+    }
+  }
+
+  pub fn get_apiyi_nano_banana_client_ref(&self) -> Result<&RouterApiyiNanaBananaClient, ClientError> {
+    match self {
+      RouterClient::ApiyiNanaBanana(client) => Ok(client),
+      RouterClient::Multi(multi) => multi.get_apiyi_nano_banana_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::ApiyiNanaBanana)),
+    }
+  }
+
+  pub fn get_apiyi_gpt_image_2_client_ref(&self) -> Result<&RouterApiyiGptImage2Client, ClientError> {
+    match self {
+      RouterClient::ApiyiGptImage2(client) => Ok(client),
+      RouterClient::Multi(multi) => multi.get_apiyi_gpt_image_2_client_ref(),
+      _ => Err(ClientError::ClientNotConfigured(ClientType::ApiyiGptImage2)),
     }
   }
 

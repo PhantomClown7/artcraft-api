@@ -9,7 +9,10 @@ type ProviderCredentialKey =
   | "grok_web_login"
   | "higgsfield_web_login"
   | "midjourney_login"
-  | "runway_web_login";
+  | "runway_web_login"
+  | "runninghub_api_key"
+  | "apiyi_nano_banana_api_key"
+  | "apiyi_gpt_image_2_api_key";
 
 interface ProviderCredentialDetails {
   maybe_key_start: string | null;
@@ -155,6 +158,9 @@ export const ProviderCredentialsGroupBlock = () => {
 
   const falProvider = findProvider("fal_api_key");
   const replicateProvider = findProvider("replicate_api_key");
+  const runninghubProvider = findProvider("runninghub_api_key");
+  const apiyiNanoBananaProvider = findProvider("apiyi_nano_banana_api_key");
+  const apiyiGptImage2Provider = findProvider("apiyi_gpt_image_2_api_key");
 
   return (
     <div className="space-y-3">
@@ -177,6 +183,36 @@ export const ProviderCredentialsGroupBlock = () => {
         }
         initialFullKey={
           replicateProvider?.maybe_details?.maybe_full_key ?? ""
+        }
+      />
+      <ApiKeyRow
+        label="RunningHub API Key (optional)"
+        credentialKey="runninghub_api_key"
+        initialRedactedValue={
+          runninghubProvider?.maybe_details?.maybe_key_start ?? ""
+        }
+        initialFullKey={
+          runninghubProvider?.maybe_details?.maybe_full_key ?? ""
+        }
+      />
+      <ApiKeyRow
+        label="Apiyi — Nano Banana Key (optional)"
+        credentialKey="apiyi_nano_banana_api_key"
+        initialRedactedValue={
+          apiyiNanoBananaProvider?.maybe_details?.maybe_key_start ?? ""
+        }
+        initialFullKey={
+          apiyiNanoBananaProvider?.maybe_details?.maybe_full_key ?? ""
+        }
+      />
+      <ApiKeyRow
+        label="Apiyi — GPT Image 2 VIP Key (optional)"
+        credentialKey="apiyi_gpt_image_2_api_key"
+        initialRedactedValue={
+          apiyiGptImage2Provider?.maybe_details?.maybe_key_start ?? ""
+        }
+        initialFullKey={
+          apiyiGptImage2Provider?.maybe_details?.maybe_full_key ?? ""
         }
       />
     </div>

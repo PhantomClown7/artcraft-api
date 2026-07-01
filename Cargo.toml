@@ -14,7 +14,9 @@ members = [
   "crates/api_clients/cloud_storage",
   "crates/api_clients/comet_api_client",
   "crates/api_clients/datadog_client",
+  "crates/api_clients/apiyi_client",
   "crates/api_clients/fal_client",
+  "crates/api_clients/runninghub_client",
   "crates/api_clients/google_drive_downloader",
   "crates/api_clients/google_sign_in",
   "crates/api_clients/grok_api_client",
@@ -257,7 +259,9 @@ easyenv = { path = "crates/lib/easyenv" }
 enums = { path = "crates/schema/public/enums" }
 error_utils = { path = "crates/lib/error_utils" }
 errors = { path = "crates/lib/errors" }
+apiyi_client = { path = "crates/api_clients/apiyi_client" }
 fal_client = { path = "crates/api_clients/fal_client" }
+runninghub_client = { path = "crates/api_clients/runninghub_client" }
 gmicloud_client = { path = "crates/api_clients/gmicloud_client" }
 ffmpeg_utils = { path = "crates/lib/ffmpeg_utils" }
 file_to_base64_url = { path = "crates/lib/files/file_to_base64_url" }

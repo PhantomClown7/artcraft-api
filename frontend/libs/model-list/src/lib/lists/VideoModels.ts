@@ -608,6 +608,52 @@ export const VIDEO_MODELS: VideoModel[] = [
     progressBarTime: 5 * 60 * 1000,
     maxPromptLength: 2000,
   }),
+  new VideoModel({
+    id: "runninghub_grok_video",
+    tauriId: "runninghub_grok_video",
+    fullName: "RunningHub: Grok Video",
+    category: "video",
+    creator: ModelCreator.Runninghub,
+    providers: [GenerationProvider.Runninghub],
+    selectorName: "RunningHub: Grok Video",
+    selectorDescription: "Grok video generation via RunningHub",
+    selectorBadges: ["5 min."],
+    startFrame: true,
+    endFrame: false,
+    requiresImage: false,
+    progressBarTime: 300000,
+    maxPromptLength: 4096,
+    sizeOptions: [
+      {
+        tauriValue: "wide_three_by_two",
+        textLabel: "3:2",
+        icon: SizeIconOption.Landscape,
+      },
+      {
+        tauriValue: "square",
+        textLabel: "1:1",
+        icon: SizeIconOption.Square,
+      },
+      {
+        tauriValue: "tall_two_by_three",
+        textLabel: "2:3",
+        icon: SizeIconOption.Portrait,
+      },
+      {
+        tauriValue: "wide_sixteen_by_nine",
+        textLabel: "16:9",
+        icon: SizeIconOption.Landscape16x9,
+      },
+      {
+        tauriValue: "tall_nine_by_sixteen",
+        textLabel: "9:16",
+        icon: SizeIconOption.Portrait9x16,
+      },
+    ],
+    supportsCommonAspectRatio: true,
+    durationOptions: [6, 12, 18, 24, 30],
+    defaultDuration: 6,
+  }),
 ];
 
 export const VIDEO_MODELS_BY_ID: Map<string, VideoModel> = new Map(

@@ -26,5 +26,9 @@ pub fn tauri_image_model_to_generation_model(model: TauriImageModel) -> Generati
     TauriImageModel::Flux2LoraAngles => GenerationModel::Flux2LoraAngles,
     TauriImageModel::FluxDevJuggernaut => GenerationModel::FluxDevJuggernaut,
     TauriImageModel::FluxPro1 => GenerationModel::FluxPro1,
+    TauriImageModel::RunninghubNanoBanana2 => GenerationModel::NanoBanana2,
+    TauriImageModel::RunninghubGptImage2 => GenerationModel::GptImage2,
+    TauriImageModel::ApiyiNanaBanana2 => GenerationModel::NanoBanana2,
+    TauriImageModel::ApiyiGptImage2Vip => GenerationModel::GptImage2,
   }
 }

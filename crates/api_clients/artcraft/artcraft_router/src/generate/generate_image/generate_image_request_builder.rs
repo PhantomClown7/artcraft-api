@@ -41,9 +41,13 @@ use crate::generate::generate_image::providers::fal::qwen_edit_2511_angles::buil
 use crate::generate::generate_image::providers::fal::seedream_4::build::build_fal_seedream_4;
 use crate::generate::generate_image::providers::fal::seedream_4p5::build::build_fal_seedream_4p5;
 use crate::generate::generate_image::providers::fal::seedream_5_lite::build::build_fal_seedream_5_lite;
+use crate::generate::generate_image::providers::apiyi::gpt_image_2_vip::build::build_apiyi_gpt_image_2_vip;
+use crate::generate::generate_image::providers::apiyi::nano_banana_2::build::build_apiyi_nano_banana_2;
 use crate::generate::generate_image::providers::kinovi::midjourney_7::build::build_kinovi_midjourney_7;
 use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::build::build_kinovi_midjourney_7_niji;
 use crate::generate::generate_image::providers::kinovi::midjourney_8::build::build_kinovi_midjourney_8;
+use crate::generate::generate_image::providers::runninghub::gpt_image_2::build::build_runninghub_gpt_image_2;
+use crate::generate::generate_image::providers::runninghub::nano_banana_2::build::build_runninghub_nano_banana_2;
 
 #[derive(Clone, Debug)]
 pub struct GenerateImageRequestBuilder {
@@ -145,6 +149,14 @@ impl GenerateImageRequestBuilder {
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7) => build_kinovi_midjourney_7(self),
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney7Niji) => build_kinovi_midjourney_7_niji(self),
       (RouterProvider::Seedance2Pro, RouterImageModel::Midjourney8) => build_kinovi_midjourney_8(self),
+
+      // RunningHub
+      (RouterProvider::Runninghub, RouterImageModel::NanoBanana2) => build_runninghub_nano_banana_2(self),
+      (RouterProvider::Runninghub, RouterImageModel::GptImage2) => build_runninghub_gpt_image_2(self),
+
+      // Apiyi
+      (RouterProvider::Apiyi, RouterImageModel::NanoBanana2) => build_apiyi_nano_banana_2(self),
+      (RouterProvider::Apiyi, RouterImageModel::GptImage2Vip) => build_apiyi_gpt_image_2_vip(self),
 
       _ => self.unsupported_provider_and_model(),
     }

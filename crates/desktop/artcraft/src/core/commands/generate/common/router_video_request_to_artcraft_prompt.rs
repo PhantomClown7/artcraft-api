@@ -88,8 +88,10 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
   match provider {
     RouterProvider::Artcraft => GenerationProvider::Artcraft,
     RouterProvider::Fal => GenerationProvider::Fal,
+    RouterProvider::Runninghub => GenerationProvider::Runninghub,
+    RouterProvider::Apiyi => GenerationProvider::Apiyi,
     // Unused providers -> ArtCraft
-    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
+    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft,
     RouterProvider::GmiCloud => GenerationProvider::Artcraft,
     RouterProvider::GrokApi => GenerationProvider::Artcraft,
   }

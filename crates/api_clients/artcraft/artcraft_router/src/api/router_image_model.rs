@@ -45,6 +45,8 @@ pub enum RouterImageModel {
   QwenEdit2511Angles,
   #[serde(rename = "flux_2_lora_angles")]
   Flux2LoraAngles,
+  #[serde(rename = "gpt_image_2_vip")]
+  GptImage2Vip,
 }
 
 #[cfg(test)]

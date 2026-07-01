@@ -7,12 +7,14 @@ use crate::core::commands::generate::generate_video::request::{
   TauriGenerateVideoErrorType, TauriGenerateVideoRequest, TauriGenerateVideoResponse,
   TauriVideoModel,
 };
+use crate::core::commands::generate::generate_video::runninghub::handle_runninghub_grok_video::handle_runninghub_grok_video;
 use crate::core::commands::generate::generate_video::sora2::handle_sora_sora2::handle_sora_sora2;
 use crate::core::commands::response::failure_response_wrapper::{CommandErrorResponseWrapper, CommandErrorStatus};
 use crate::core::commands::response::shorthand::Response;
 use crate::core::events::basic_sendable_event_trait::BasicSendableEvent;
 use crate::core::events::functional_events::credits_balance_changed_event::CreditsBalanceChangedEvent;
 use crate::core::events::generation_events::generation_enqueue_success_event::GenerationEnqueueSuccessEvent;
+use crate::core::providers::credentials::provider_credential_loading_cache::ProviderCredentialLoadingCache;
 use crate::core::state::app_env_configs::app_env_configs::AppEnvConfigs;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_tracker::ArtcraftUsageTracker;
 use crate::core::state::artcraft_usage_tracker::artcraft_usage_type::{ArtcraftUsagePage, ArtcraftUsageType};
@@ -40,6 +42,7 @@ pub async fn generate_video_command(
   storyteller_creds_manager: State<'_, StorytellerCredentialManager>,
   sora_task_queue: State<'_, SoraTaskQueue>,
   sora_creds_manager: State<'_, SoraCredentialManager>,
+  credential_cache: State<'_, ProviderCredentialLoadingCache>,
 ) -> Response<TauriGenerateVideoResponse, TauriGenerateVideoErrorType, ()> {
 
   info!("generate_video_command called, request: {:?}", request);
@@ -67,6 +70,7 @@ pub async fn generate_video_command(
     &grok_creds_manager,
     &sora_creds_manager,
     &storyteller_creds_manager,
+    &credential_cache,
   ).await;
 
   match result {
@@ -139,6 +143,7 @@ async fn handle_request(
   grok_creds_manager: &GrokCredentialManager,
   sora_creds_manager: &SoraCredentialManager,
   storyteller_creds_manager: &StorytellerCredentialManager,
+  credential_cache: &ProviderCredentialLoadingCache,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
 
   let model = match request.model {
@@ -150,6 +155,7 @@ async fn handle_request(
 
   let provider = match (model, request.provider) {
     (TauriVideoModel::GrokVideo, _) => GenerationProvider::Grok,
+    (TauriVideoModel::RunninghubGrokVideo, _) => GenerationProvider::Runninghub,
     _ => request.provider.unwrap_or(GenerationProvider::Artcraft),
   };
 
@@ -172,6 +178,13 @@ async fn handle_request(
         app_data_root,
         app_env_configs,
         sora_creds_manager,
+      ).await
+    }
+    GenerationProvider::Runninghub => {
+      handle_runninghub_grok_video(
+        &request,
+        credential_cache,
+        app_env_configs,
       ).await
     }
     _ => {

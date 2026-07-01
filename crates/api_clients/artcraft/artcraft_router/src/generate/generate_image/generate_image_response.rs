@@ -36,14 +36,36 @@ pub struct Seedance2proImageResponsePayload {
   pub maybe_task_ids: Option<Vec<String>>,
 }
 
+/// Response from RunningHub (async polling completed — final image URL).
+#[derive(Clone, Debug)]
+pub struct RunninghubImageResponsePayload {
+  pub task_id: String,
+  pub image_url: String,
+}
+
+/// Response from Apiyi (synchronous — base64-encoded image bytes).
+#[derive(Clone, Debug)]
+pub struct ApiyiImageResponsePayload {
+  pub image_base64: String,
+}
+
 #[derive(Clone, Debug)]
 pub enum GenerateImageResponse {
+  Apiyi(ApiyiImageResponsePayload),
   Artcraft(ArtcraftImageResponsePayload),
   Fal(FalImageResponsePayload),
+  Runninghub(RunninghubImageResponsePayload),
   Seedance2Pro(Seedance2proImageResponsePayload),
 }
 
 impl GenerateImageResponse {
+  pub fn get_apiyi_payload(&self) -> Option<ApiyiImageResponsePayload> {
+    match self {
+      Self::Apiyi(p) => Some(p.clone()),
+      _ => None,
+    }
+  }
+
   pub fn get_artcraft_payload(&self) -> Option<ArtcraftImageResponsePayload> {
     match self {
       Self::Artcraft(p) => Some(p.clone()),
@@ -54,6 +76,13 @@ impl GenerateImageResponse {
   pub fn get_fal_payload(&self) -> Option<FalImageResponsePayload> {
     match self {
       Self::Fal(p) => Some(p.clone()),
+      _ => None,
+    }
+  }
+
+  pub fn get_runninghub_payload(&self) -> Option<RunninghubImageResponsePayload> {
+    match self {
+      Self::Runninghub(p) => Some(p.clone()),
       _ => None,
     }
   }

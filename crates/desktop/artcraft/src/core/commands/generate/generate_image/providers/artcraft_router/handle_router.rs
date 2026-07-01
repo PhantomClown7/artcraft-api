@@ -3,7 +3,7 @@ use log::info;
 
 use crate::core::commands::enqueue::generate_error::{GenerateError, MissingCredentialsReason};
 use crate::core::commands::enqueue::task_enqueue_success::TaskEnqueueSuccess;
-use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_api_providers::handle_api_key_provider;
+use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_api_providers::{handle_api_key_provider, handle_apiyi};
 use crate::core::commands::generate::generate_image::providers::artcraft_router::handle_web_login_providers::handle_web_login_provider;
 use crate::core::commands::generate::generate_image::tauri_generate_image_request::TauriGenerateImageRequest;
 use crate::core::providers::credentials::payload::provider_credential_payload::ProviderCredentialPayload;
@@ -23,6 +23,11 @@ pub async fn handle_router(
   credential_cache: &ProviderCredentialLoadingCache,
   storyteller_creds_manager: &StorytellerCredentialManager,
 ) -> Result<TaskEnqueueSuccess, GenerateError> {
+  // Apiyi uses model-specific keys — bypass the single-key credential path.
+  if provider == GenerationProvider::Apiyi {
+    return handle_apiyi(request, credential_cache, app_env_configs, storyteller_creds_manager).await;
+  }
+
   let credential_key = map_provider_to_credential_key(provider)?;
 
   info!("handle_router: provider={:?}, credential_key={:?}", provider, credential_key);
@@ -50,6 +55,7 @@ fn map_provider_to_credential_key(
 ) -> Result<ProviderCredentialKey, GenerateError> {
   match provider {
     GenerationProvider::Fal => Ok(ProviderCredentialKey::FalApiKey),
+    GenerationProvider::Runninghub => Ok(ProviderCredentialKey::RunninghubApiKey),
     _ => Err(GenerateError::NotYetImplemented(
       format!("Provider {:?} does not have a mapped credential key yet", provider),
     )),
@@ -59,6 +65,7 @@ fn map_provider_to_credential_key(
 fn map_provider_to_missing_credentials_error(provider: GenerationProvider) -> GenerateError {
   match provider {
     GenerationProvider::Fal => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsFalApiKey),
+    GenerationProvider::Runninghub => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsRunninghubApiKey),
     GenerationProvider::Grok => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsGrokCredentials),
     GenerationProvider::Midjourney => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsMidjourneyCredentials),
     GenerationProvider::Sora => GenerateError::MissingCredentials(MissingCredentialsReason::NeedsSoraCredentials),

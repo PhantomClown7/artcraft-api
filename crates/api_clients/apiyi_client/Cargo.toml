@@ -1,0 +1,26 @@
+[package]
+name = "apiyi_client"
+edition = "2021"
+version = "0.0.1"
+publish = false
+
+[package.metadata.cargo-udeps.ignore]
+normal = ["workspace-build-acceleration"]
+
+[lib]
+name = "apiyi_client"
+path = "src/lib.rs"
+
+[dependencies]
+# cargo-hakari workspace hack (faster compile times)
+workspace-build-acceleration.workspace = true
+
+# External
+anyhow.workspace = true
+base64.workspace = true
+log.workspace = true
+reqwest = { workspace = true, features = ["multipart"] }
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true

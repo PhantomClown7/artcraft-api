@@ -274,6 +274,8 @@ fn provider_to_generation_service(provider: GenerationProvider) -> GenerationSer
     GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
     GenerationProvider::Sora => GenerationServiceProvider::Sora,
     GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
+    GenerationProvider::Runninghub => GenerationServiceProvider::Runninghub,
+    GenerationProvider::Apiyi => GenerationServiceProvider::Apiyi,
   }
 }
 

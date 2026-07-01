@@ -10,5 +10,7 @@ pub fn to_generation_service_provider(provider: GenerationProvider) -> Generatio
     GenerationProvider::Midjourney => GenerationServiceProvider::Midjourney,
     GenerationProvider::Sora => GenerationServiceProvider::Sora,
     GenerationProvider::WorldLabs => GenerationServiceProvider::WorldLabs,
+    GenerationProvider::Runninghub => GenerationServiceProvider::Runninghub,
+    GenerationProvider::Apiyi => GenerationServiceProvider::Apiyi,
   }
 }

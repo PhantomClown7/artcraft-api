@@ -61,6 +61,7 @@ fn image_model_to_common_model_type(model: RouterImageModel) -> Option<CommonMod
     RouterImageModel::Midjourney7 => Some(CommonModelType::Midjourney7),
     RouterImageModel::Midjourney7Niji => Some(CommonModelType::Midjourney7Niji),
     RouterImageModel::Midjourney8 => Some(CommonModelType::Midjourney8),
+    RouterImageModel::GptImage2Vip => Some(CommonModelType::GptImage2),
   }
 }
 
@@ -68,8 +69,10 @@ fn provider_to_generation_provider(provider: RouterProvider) -> GenerationProvid
   match provider {
     RouterProvider::Artcraft => GenerationProvider::Artcraft,
     RouterProvider::Fal => GenerationProvider::Fal,
+    RouterProvider::Runninghub => GenerationProvider::Runninghub,
+    RouterProvider::Apiyi => GenerationProvider::Apiyi,
     // Unused providers -> ArtCraft
-    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft ,
+    RouterProvider::Seedance2Pro => GenerationProvider::Artcraft,
     RouterProvider::GmiCloud => GenerationProvider::Artcraft,
     RouterProvider::GrokApi => GenerationProvider::Artcraft,
   }

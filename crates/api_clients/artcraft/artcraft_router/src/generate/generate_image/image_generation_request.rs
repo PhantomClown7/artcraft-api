@@ -69,12 +69,20 @@ use crate::generate::generate_image::providers::fal::seedream_4p5::cost::FalSeed
 use crate::generate::generate_image::providers::fal::seedream_4p5::request::FalSeedream4p5RequestState;
 use crate::generate::generate_image::providers::fal::seedream_5_lite::cost::FalSeedream5LiteCostState;
 use crate::generate::generate_image::providers::fal::seedream_5_lite::request::FalSeedream5LiteRequestState;
+use crate::generate::generate_image::providers::apiyi::gpt_image_2_vip::cost::ApiyiGptImage2VipCostState;
+use crate::generate::generate_image::providers::apiyi::gpt_image_2_vip::request::ApiyiGptImage2VipRequestState;
+use crate::generate::generate_image::providers::apiyi::nano_banana_2::cost::ApiyiNanaBanana2CostState;
+use crate::generate::generate_image::providers::apiyi::nano_banana_2::request::ApiyiNanaBanana2RequestState;
 use crate::generate::generate_image::providers::kinovi::midjourney_7::cost::KinoviMidjourney7CostState;
 use crate::generate::generate_image::providers::kinovi::midjourney_7::request::KinoviMidjourney7RequestState;
 use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::cost::KinoviMidjourney7NijiCostState;
 use crate::generate::generate_image::providers::kinovi::midjourney_7_niji::request::KinoviMidjourney7NijiRequestState;
 use crate::generate::generate_image::providers::kinovi::midjourney_8::cost::KinoviMidjourney8CostState;
 use crate::generate::generate_image::providers::kinovi::midjourney_8::request::KinoviMidjourney8RequestState;
+use crate::generate::generate_image::providers::runninghub::gpt_image_2::cost::RunninghubGptImage2CostState;
+use crate::generate::generate_image::providers::runninghub::gpt_image_2::request::RunninghubGptImage2RequestState;
+use crate::generate::generate_image::providers::runninghub::nano_banana_2::cost::RunninghubNanoBanana2CostState;
+use crate::generate::generate_image::providers::runninghub::nano_banana_2::request::RunninghubNanoBanana2RequestState;
 
 #[derive(Clone, Debug)]
 pub enum ImageGenerationRequest {
@@ -119,6 +127,14 @@ pub enum ImageGenerationRequest {
   KinoviMidjourney7(KinoviMidjourney7RequestState),
   KinoviMidjourney7Niji(KinoviMidjourney7NijiRequestState),
   KinoviMidjourney8(KinoviMidjourney8RequestState),
+
+  // ── RunningHub provider ──
+  RunninghubNanoBanana2(RunninghubNanoBanana2RequestState),
+  RunninghubGptImage2(RunninghubGptImage2RequestState),
+
+  // ── Apiyi provider ──
+  ApiyiNanaBanana2(ApiyiNanaBanana2RequestState),
+  ApiyiGptImage2Vip(ApiyiGptImage2VipRequestState),
 }
 
 impl ImageGenerationRequest {
@@ -162,6 +178,12 @@ impl ImageGenerationRequest {
       Self::KinoviMidjourney7(_) => RouterProvider::Seedance2Pro,
       Self::KinoviMidjourney7Niji(_) => RouterProvider::Seedance2Pro,
       Self::KinoviMidjourney8(_) => RouterProvider::Seedance2Pro,
+
+      Self::RunninghubNanoBanana2(_) => RouterProvider::Runninghub,
+      Self::RunninghubGptImage2(_) => RouterProvider::Runninghub,
+
+      Self::ApiyiNanaBanana2(_) => RouterProvider::Apiyi,
+      Self::ApiyiGptImage2Vip(_) => RouterProvider::Apiyi,
     }
   }
 
@@ -243,6 +265,12 @@ impl ImageGenerationRequest {
       Self::KinoviMidjourney7(request) => Ok(KinoviMidjourney7CostState::from_request(request).estimate_cost()),
       Self::KinoviMidjourney7Niji(request) => Ok(KinoviMidjourney7NijiCostState::from_request(request).estimate_cost()),
       Self::KinoviMidjourney8(request) => Ok(KinoviMidjourney8CostState::from_request(request).estimate_cost()),
+
+      Self::RunninghubNanoBanana2(request) => Ok(RunninghubNanoBanana2CostState::from_request(request).estimate_cost()),
+      Self::RunninghubGptImage2(request) => Ok(RunninghubGptImage2CostState::from_request(request).estimate_cost()),
+
+      Self::ApiyiNanaBanana2(request) => Ok(ApiyiNanaBanana2CostState::from_request(request).estimate_cost()),
+      Self::ApiyiGptImage2Vip(request) => Ok(ApiyiGptImage2VipCostState::from_request(request).estimate_cost()),
     }
   }
 
@@ -404,6 +432,30 @@ impl ImageGenerationRequest {
         let seedance_client = client.get_seedance2pro_client_ref()
           .map_err(ArtcraftRouterError::Client)?;
         request.send(seedance_client).await
+      }
+
+      // ── RunningHub ──
+      Self::RunninghubNanoBanana2(request) => {
+        let runninghub_client = client.get_runninghub_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(runninghub_client).await
+      }
+      Self::RunninghubGptImage2(request) => {
+        let runninghub_client = client.get_runninghub_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(runninghub_client).await
+      }
+
+      // ── Apiyi ──
+      Self::ApiyiNanaBanana2(request) => {
+        let apiyi_client = client.get_apiyi_nano_banana_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(apiyi_client).await
+      }
+      Self::ApiyiGptImage2Vip(request) => {
+        let apiyi_client = client.get_apiyi_gpt_image_2_client_ref()
+          .map_err(ArtcraftRouterError::Client)?;
+        request.send(apiyi_client).await
       }
     }
   }

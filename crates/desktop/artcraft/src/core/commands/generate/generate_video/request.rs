@@ -16,6 +16,9 @@ pub enum TauriVideoModel {
   #[serde(rename = "grok_video")]
   GrokVideo,
 
+  #[serde(rename = "runninghub_grok_video")]
+  RunninghubGrokVideo,
+
   #[serde(rename = "kling_1.6_pro")]
   Kling16Pro,
 

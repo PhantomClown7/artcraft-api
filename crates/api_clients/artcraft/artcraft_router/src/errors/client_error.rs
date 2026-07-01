@@ -5,20 +5,26 @@ use tokens::tokens::media_files::MediaFileToken;
 
 #[derive(Debug, Clone, Copy)]
 pub enum ClientType {
+  ApiyiGptImage2,
+  ApiyiNanaBanana,
   Artcraft,
   Fal,
   GmiCloud,
   GrokApi,
+  Runninghub,
   Seedance2Pro,
 }
 
 impl Display for ClientType {
   fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
     match self {
+      Self::ApiyiGptImage2 => write!(f, "ApiyiGptImage2"),
+      Self::ApiyiNanaBanana => write!(f, "ApiyiNanaBanana"),
       Self::Artcraft => write!(f, "Artcraft"),
       Self::Fal => write!(f, "Fal"),
       Self::GmiCloud => write!(f, "GmiCloud"),
       Self::GrokApi => write!(f, "GrokApi"),
+      Self::Runninghub => write!(f, "Runninghub"),
       Self::Seedance2Pro => write!(f, "Seedance2Pro"),
     }
   }
