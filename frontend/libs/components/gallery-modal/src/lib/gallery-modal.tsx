@@ -527,21 +527,7 @@ export const GalleryModal = React.memo(
     );
     const gridColumns = isNarrow ? 2 : maxColumns - (sliderValue - minColumns);
     const [imageFit, setImageFit] = useState<"cover" | "contain">("contain");
-    const [showUploads, setShowUploads] = useState<boolean>(() => {
-      try {
-        const stored = localStorage.getItem(SHOW_UPLOADS_STORAGE_KEY);
-        return stored === null ? false : stored === "true";
-      } catch {
-        return false;
-      }
-    });
-    useEffect(() => {
-      try {
-        localStorage.setItem(SHOW_UPLOADS_STORAGE_KEY, String(showUploads));
-      } catch {
-        // ignore
-      }
-    }, [showUploads]);
+    const [showUploads, setShowUploads] = useState<boolean>(true);
     const [allItems, setAllItems] = useState<GalleryItem[]>([]);
     const [pageIndex, setPageIndex] = useState(0);
     const [hasMore, setHasMore] = useState(true);

@@ -66,10 +66,10 @@ export const UploadFilesMedia = ({
           className={uploadTitle.error ? "mb-3" : ""}
         />
         <FileUploader
-          title={title}
           fileTypes={fileTypes}
-          file={assetFile.value}
-          setFile={(file: File | null) => {
+          files={assetFile.value ? [assetFile.value] : []}
+          handleChange={(files: File[]) => {
+            const file = files[0] ?? null;
             if (file !== null) {
               setAssetFile({
                 value: file,
