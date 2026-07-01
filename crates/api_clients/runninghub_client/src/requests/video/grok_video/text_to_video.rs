@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::creds::api_key::RunninghubApiKey;
 use crate::error::RunninghubError;
-use crate::polling::poll_task::poll_task;
+use crate::polling::poll_task::{poll_task, POLL_MAX_SECONDS_VIDEO};
 
 const BASE_URL: &str = "https://www.runninghub.ai";
 const ENDPOINT: &str = "/openapi/v2/rhart-video-g/text-to-video";
@@ -16,6 +16,7 @@ pub struct GrokVideoTextToVideoRequest {
 }
 
 #[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct RawRequest {
   prompt: String,
   #[serde(skip_serializing_if = "Option::is_none")]
@@ -62,6 +63,6 @@ impl GrokVideoTextToVideoRequest {
     })?;
 
     log::info!("RunningHub GrokVideo text-to-video task enqueued: {}", task_id);
-    poll_task(api_key, &task_id).await
+    poll_task(api_key, &task_id, POLL_MAX_SECONDS_VIDEO).await
   }
 }

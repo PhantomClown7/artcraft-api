@@ -7,7 +7,14 @@ use crate::error::RunninghubError;
 
 const BASE_URL: &str = "https://www.runninghub.ai";
 const POLL_INTERVAL_MS: u64 = 2000;
-const POLL_MAX_SECONDS: u64 = 300;
+
+/// Timeout for image generation tasks (usually resolve within seconds).
+pub const POLL_MAX_SECONDS_IMAGE: u64 = 300;
+
+/// Timeout for video generation tasks, which routinely take several minutes.
+/// Reusing the image timeout here previously caused RunningHub Grok Video
+/// requests to time out client-side while the job was still rendering.
+pub const POLL_MAX_SECONDS_VIDEO: u64 = 900;
 
 #[derive(Debug, Deserialize)]
 struct QueryResponse {
@@ -28,20 +35,21 @@ struct TaskResult {
 pub async fn poll_task(
   api_key: &RunninghubApiKey,
   task_id: &str,
+  max_seconds: u64,
 ) -> Result<String, RunninghubError> {
   let client = reqwest::Client::new();
   let url = format!("{}/openapi/v2/query", BASE_URL);
   let body = serde_json::json!({ "taskId": task_id });
 
-  let elapsed_secs = std::cell::Cell::new(0u64);
+  let mut elapsed_secs = 0u64;
 
   loop {
-    if elapsed_secs.get() >= POLL_MAX_SECONDS {
-      return Err(RunninghubError::PollingTimeout { seconds: POLL_MAX_SECONDS });
+    if elapsed_secs >= max_seconds {
+      return Err(RunninghubError::PollingTimeout { seconds: max_seconds });
     }
 
     sleep(Duration::from_millis(POLL_INTERVAL_MS)).await;
-    elapsed_secs.set(elapsed_secs.get() + POLL_INTERVAL_MS / 1000);
+    elapsed_secs += POLL_INTERVAL_MS / 1000;
 
     let response = client
       .post(&url)

@@ -7,7 +7,9 @@ use artcraft_client::endpoints::media_files::upload_image_media_file_from_bytes:
 use artcraft_client::endpoints::prompts::create_prompt::create_prompt;
 use artcraft_client::utils::api_host::ApiHost;
 use artcraft_router::api::image_list_ref::ImageListRef;
+use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
 use artcraft_router::api::router_provider::RouterProvider;
+use artcraft_router::api::router_resolution::RouterResolution;
 use artcraft_router::client::generation_mode_mismatch_strategy::GenerationModeMismatchStrategy;
 use artcraft_router::client::request_mismatch_mitigation_strategy::RequestMismatchMitigationStrategy;
 use artcraft_router::client::router_client::RouterClient;
@@ -16,6 +18,7 @@ use artcraft_router::client::router_runninghub_client::RouterRunninghubClient;
 use artcraft_router::generate::generate_image::generate_image_request_builder::GenerateImageRequestBuilder;
 use artcraft_router::generate::generate_image::generate_image_response::GenerateImageResponse;
 use artcraft_router::generate::generate_image::image_generation_draft_or_request::ImageGenerationDraftOrRequest;
+use artcraft_router::generate::generate_image::providers::runninghub::aspect_ratio::plan_runninghub_aspect_ratio;
 use base64::engine::general_purpose::STANDARD as BASE64_STANDARD;
 use base64::Engine;
 use enums::common::generation_provider::GenerationProvider;
@@ -239,15 +242,17 @@ pub async fn handle_apiyi(
   let api_key = ApiyiApiKey::from_str(&raw_key);
   let prompt = request.prompt.clone().unwrap_or_default();
   let image_urls = get_image_urls_from_request(request, api_host).await?;
+  let aspect_ratio = request.aspect_ratio.map(convert_aspect_ratio);
+  let resolution = request.resolution.map(convert_resolution);
 
   info!("Executing Apiyi image generation: model={:?}, image_inputs={}", tauri_model, image_urls.len());
 
   let image_base64 = match tauri_model {
     TauriImageModel::ApiyiNanaBanana2 => {
-      call_apiyi_nano_banana_2(&api_key, &prompt, &image_urls).await?
+      call_apiyi_nano_banana_2(&api_key, &prompt, &image_urls, aspect_ratio, resolution).await?
     }
     TauriImageModel::ApiyiGptImage2Vip => {
-      call_apiyi_gpt_image_2_vip(&api_key, &prompt, &image_urls).await?
+      call_apiyi_gpt_image_2_vip(&api_key, &prompt, &image_urls, aspect_ratio, resolution).await?
     }
     _ => unreachable!(),
   };
@@ -291,12 +296,17 @@ async fn call_apiyi_nano_banana_2(
   api_key: &ApiyiApiKey,
   prompt: &str,
   image_urls: &[String],
+  aspect_ratio: Option<RouterAspectRatio>,
+  resolution: Option<RouterResolution>,
 ) -> Result<String, GenerateError> {
+  let image_size = apiyi_nano_banana_2_image_size(resolution);
+  let aspect_ratio = apiyi_nano_banana_2_aspect_ratio(aspect_ratio);
+
   if image_urls.is_empty() {
     let req = NanaBanana2TextToImageRequest {
       prompt: prompt.to_string(),
-      image_size: None,
-      aspect_ratio: None,
+      image_size,
+      aspect_ratio,
     };
     req.send(api_key).await
       .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi NanaBanana2 error: {:?}", e)))
@@ -305,8 +315,8 @@ async fn call_apiyi_nano_banana_2(
     let req = NanaBanana2ImageToImageRequest {
       prompt: prompt.to_string(),
       image_base64_list: base64_list,
-      image_size: None,
-      aspect_ratio: None,
+      image_size,
+      aspect_ratio,
     };
     req.send(api_key).await
       .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi NanaBanana2 image-to-image error: {:?}", e)))
@@ -317,11 +327,15 @@ async fn call_apiyi_gpt_image_2_vip(
   api_key: &ApiyiApiKey,
   prompt: &str,
   image_urls: &[String],
+  aspect_ratio: Option<RouterAspectRatio>,
+  resolution: Option<RouterResolution>,
 ) -> Result<String, GenerateError> {
+  let size = apiyi_gpt_image_2_vip_size(aspect_ratio, resolution);
+
   if image_urls.is_empty() {
     let req = GptImage2VipTextToImageRequest {
       prompt: prompt.to_string(),
-      size: None,
+      size,
     };
     req.send(api_key).await
       .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi GptImage2Vip error: {:?}", e)))
@@ -332,11 +346,100 @@ async fn call_apiyi_gpt_image_2_vip(
       prompt: prompt.to_string(),
       image_bytes: bytes,
       image_filename: "input.png".to_string(),
-      size: None,
+      size,
     };
     req.send(api_key).await
       .map_err(|e| GenerateError::AnyhowError(anyhow::anyhow!("Apiyi GptImage2Vip image-to-image error: {:?}", e)))
   }
+}
+
+/// Apiyi's Nano Banana 2 channel (Gemini 3.1 Flash) supports the same 14
+/// aspect ratios as RunningHub's Nano Banana 2 channel for the same
+/// underlying model, minus `9:21`.
+fn apiyi_nano_banana_2_aspect_ratio(ar: Option<RouterAspectRatio>) -> Option<String> {
+  plan_runninghub_aspect_ratio(ar).filter(|ar| ar != "9:21")
+}
+
+/// Maps a router resolution to Apiyi's `imageConfig.imageSize` values:
+/// `"512"`, `"1K"`, `"2K"`, or `"4K"`.
+fn apiyi_nano_banana_2_image_size(res: Option<RouterResolution>) -> Option<String> {
+  let s = match res? {
+    RouterResolution::HalfK => "512",
+    RouterResolution::OneK => "1K",
+    RouterResolution::TwoK => "2K",
+    RouterResolution::ThreeK => "2K",
+    RouterResolution::FourK => "4K",
+    RouterResolution::FourEightyP => "1K",
+    RouterResolution::SevenTwentyP => "1K",
+    RouterResolution::TenEightyP => "2K",
+  };
+  Some(s.to_string())
+}
+
+/// Apiyi's GPT Image 2 VIP has no `aspectRatio`/`resolution` fields - it
+/// takes an explicit `"WIDTHxHEIGHT"` `size` from a fixed table of 30 values
+/// (10 aspect ratios x 3 quality tiers). Ratios/tiers outside that table
+/// return `None`, which omits the field and lets the API use `"auto"`.
+fn apiyi_gpt_image_2_vip_size(ar: Option<RouterAspectRatio>, res: Option<RouterResolution>) -> Option<String> {
+  let ratio_key = match ar? {
+    RouterAspectRatio::Square | RouterAspectRatio::SquareHd => "1:1",
+    RouterAspectRatio::TallTwoByThree | RouterAspectRatio::Tall => "2:3",
+    RouterAspectRatio::WideThreeByTwo | RouterAspectRatio::Wide => "3:2",
+    RouterAspectRatio::TallThreeByFour => "3:4",
+    RouterAspectRatio::WideFourByThree => "4:3",
+    RouterAspectRatio::TallFourByFive => "4:5",
+    RouterAspectRatio::WideFiveByFour => "5:4",
+    RouterAspectRatio::TallNineBySixteen => "9:16",
+    RouterAspectRatio::WideSixteenByNine => "16:9",
+    RouterAspectRatio::WideTwentyOneByNine => "21:9",
+    RouterAspectRatio::Auto
+    | RouterAspectRatio::TallNineByTwentyOne
+    | RouterAspectRatio::Auto2k
+    | RouterAspectRatio::Auto3k
+    | RouterAspectRatio::Auto4k => return None,
+  };
+
+  let tier = match res {
+    Some(RouterResolution::FourK) => "4k",
+    Some(RouterResolution::ThreeK) | Some(RouterResolution::TwoK) | Some(RouterResolution::TenEightyP) => "2k",
+    _ => "1k",
+  };
+
+  let size = match (ratio_key, tier) {
+    ("1:1", "1k") => "1280x1280",
+    ("1:1", "2k") => "2048x2048",
+    ("1:1", "4k") => "2880x2880",
+    ("2:3", "1k") => "848x1280",
+    ("2:3", "2k") => "1360x2048",
+    ("2:3", "4k") => "2336x3520",
+    ("3:2", "1k") => "1280x848",
+    ("3:2", "2k") => "2048x1360",
+    ("3:2", "4k") => "3520x2336",
+    ("3:4", "1k") => "960x1280",
+    ("3:4", "2k") => "1536x2048",
+    ("3:4", "4k") => "2480x3312",
+    ("4:3", "1k") => "1280x960",
+    ("4:3", "2k") => "2048x1536",
+    ("4:3", "4k") => "3312x2480",
+    ("4:5", "1k") => "1024x1280",
+    ("4:5", "2k") => "1632x2048",
+    ("4:5", "4k") => "2560x3216",
+    ("5:4", "1k") => "1280x1024",
+    ("5:4", "2k") => "2048x1632",
+    ("5:4", "4k") => "3216x2560",
+    ("9:16", "1k") => "720x1280",
+    ("9:16", "2k") => "1152x2048",
+    ("9:16", "4k") => "2160x3840",
+    ("16:9", "1k") => "1280x720",
+    ("16:9", "2k") => "2048x1152",
+    ("16:9", "4k") => "3840x2160",
+    ("21:9", "1k") => "1280x544",
+    ("21:9", "2k") => "2048x864",
+    ("21:9", "4k") => "3840x1632",
+    _ => return None,
+  };
+
+  Some(size.to_string())
 }
 
 // ── Shared helpers ──

@@ -76,7 +76,7 @@ async fn handle_runninghub_complete_inner(
   let media_class = if is_video { TaskMediaFileClass::Video } else { TaskMediaFileClass::Image };
 
   info!("[RunninghubComplete] Downloading {} from: {}", if is_video { "video" } else { "image" }, media_url);
-  let download_path = download_file(&media_url, app_data_root).await?;
+  let download_path = download_file(&media_url, app_data_root, is_video).await?;
 
   info!("[RunninghubComplete] Uploading to CDN...");
   let media_file_token: MediaFileToken = if is_video {
@@ -154,13 +154,15 @@ async fn handle_runninghub_complete_inner(
 async fn download_file(
   url: &str,
   app_data_root: &AppDataRoot,
+  is_video: bool,
 ) -> Result<PathBuf, Box<dyn std::error::Error>> {
   let response = reqwest::get(url).await?;
   let bytes = response.bytes().await?;
 
+  let fallback_extension = if is_video { "mp4" } else { "png" };
   let extension = url_utils::download_extension::extract_download_extension_from_url::extract_download_extension_from_url_str(url)
     .map(|ext| ext.as_extension_without_period())
-    .unwrap_or("mp4");
+    .unwrap_or(fallback_extension);
 
   let tempdir = app_data_root.temp_dir().path();
   let filename = format!("runninghub_{}.{}", generate_random_uuid(), extension);

@@ -1,4 +1,5 @@
 use artcraft_router::api::router_aspect_ratio::RouterAspectRatio;
+use artcraft_router::api::router_resolution::RouterResolution;
 use enums::common::generation_provider::GenerationProvider;
 use enums::tauri::tasks::task_type::TaskType;
 use log::{error, info};
@@ -24,8 +25,12 @@ pub async fn handle_runninghub_grok_video(
   let api_key = load_api_key(credential_cache)?;
 
   let prompt = request.prompt.clone().unwrap_or_default();
-  let aspect_ratio = request.aspect_ratio.and_then(map_aspect_ratio);
-  let duration = request.duration_seconds.map(|d| d as u32);
+  // Grok Video's aspectRatio/resolution/duration are all required fields with
+  // no documented server-side default, so always supply a value here rather
+  // than omitting the field.
+  let aspect_ratio = plan_grok_video_aspect_ratio(request.aspect_ratio);
+  let resolution = plan_grok_video_resolution(request.resolution);
+  let duration = request.duration_seconds.map(|d| d as u32).unwrap_or(6);
 
   let video_url = if let Some(image_token) = &request.start_frame_image_media_token {
     info!("[RunninghubGrokVideo] Image-to-video mode");
@@ -38,9 +43,9 @@ pub async fn handle_runninghub_grok_video(
     let result = GrokVideoImageToVideoRequest {
       prompt,
       image_urls,
-      aspect_ratio,
-      resolution: None,
-      duration,
+      aspect_ratio: Some(aspect_ratio.to_string()),
+      resolution: Some(resolution.to_string()),
+      duration: Some(duration),
     }.send(&api_key).await;
 
     match result {
@@ -55,9 +60,9 @@ pub async fn handle_runninghub_grok_video(
 
     let result = GrokVideoTextToVideoRequest {
       prompt,
-      aspect_ratio,
-      resolution: None,
-      duration,
+      aspect_ratio: Some(aspect_ratio.to_string()),
+      resolution: Some(resolution.to_string()),
+      duration: Some(duration),
     }.send(&api_key).await;
 
     match result {
@@ -98,16 +103,37 @@ fn load_api_key(
   }
 }
 
-fn map_aspect_ratio(ar: RouterAspectRatio) -> Option<String> {
-  let s = match ar {
-    RouterAspectRatio::Square | RouterAspectRatio::SquareHd => "1:1",
-    RouterAspectRatio::WideThreeByTwo | RouterAspectRatio::Wide => "3:2",
-    RouterAspectRatio::TallTwoByThree | RouterAspectRatio::Tall => "2:3",
-    RouterAspectRatio::WideSixteenByNine => "16:9",
-    RouterAspectRatio::TallNineBySixteen => "9:16",
-    RouterAspectRatio::WideFourByThree => "4:3",
-    RouterAspectRatio::TallThreeByFour => "3:4",
-    _ => return None,
-  };
-  Some(s.to_string())
+/// Grok Video only supports 5 aspect ratios (unlike RunningHub's image
+/// endpoints, which support up to 15) and the field is required, so this
+/// always returns a value - snapping unsupported ratios to the closest match.
+fn plan_grok_video_aspect_ratio(ar: Option<RouterAspectRatio>) -> &'static str {
+  match ar {
+    Some(RouterAspectRatio::Square) | Some(RouterAspectRatio::SquareHd) => "1:1",
+    Some(RouterAspectRatio::WideSixteenByNine) => "16:9",
+    Some(RouterAspectRatio::TallNineBySixteen) => "9:16",
+    Some(RouterAspectRatio::WideThreeByTwo)
+    | Some(RouterAspectRatio::Wide)
+    | Some(RouterAspectRatio::WideFourByThree)
+    | Some(RouterAspectRatio::WideFiveByFour)
+    | Some(RouterAspectRatio::WideTwentyOneByNine) => "3:2",
+    Some(RouterAspectRatio::TallTwoByThree)
+    | Some(RouterAspectRatio::Tall)
+    | Some(RouterAspectRatio::TallThreeByFour)
+    | Some(RouterAspectRatio::TallFourByFive)
+    | Some(RouterAspectRatio::TallNineByTwentyOne) => "2:3",
+    Some(RouterAspectRatio::Auto)
+    | Some(RouterAspectRatio::Auto2k)
+    | Some(RouterAspectRatio::Auto3k)
+    | Some(RouterAspectRatio::Auto4k)
+    | None => "16:9",
+  }
+}
+
+/// Grok Video only supports "480p"/"720p" and the field is required, so this
+/// always returns a value rather than an `Option`.
+fn plan_grok_video_resolution(res: Option<RouterResolution>) -> &'static str {
+  match res {
+    Some(RouterResolution::HalfK) | Some(RouterResolution::FourEightyP) => "480p",
+    _ => "720p",
+  }
 }
